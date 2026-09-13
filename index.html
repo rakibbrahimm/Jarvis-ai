@@ -1,0 +1,2515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>JARVIS 2.0</title>
+
+<style>
+*{box-sizing:border-box}
+
+html,body{
+ margin:0;
+ width:100%;
+ height:100%;
+ overflow:hidden;
+ background:#000;
+ color:#00eaff;
+ font-family:monospace;
+}
+
+#scene{
+ position:fixed;
+ inset:0;
+}
+
+.hud{
+ position:fixed;
+ inset:0;
+ pointer-events:none;
+}
+
+.title{
+ text-align:center;
+ margin-top:18px;
+ font-size:25px;
+ letter-spacing:7px;
+ text-shadow:0 0 12px #00eaff,0 0 30px #00eaff;
+}
+
+.status{
+ width:max-content;
+ margin:12px auto;
+ padding:7px 16px;
+ border:1px solid #00eaff;
+ background:#001018aa;
+ box-shadow:0 0 15px #00eaff;
+ font-size:10px;
+ letter-spacing:3px;
+}
+
+.panel{
+ position:absolute;
+ top:38%;
+ width:150px;
+ padding:10px;
+ border:1px solid #00eaff55;
+ background:#000b;
+ box-shadow:0 0 15px #00eaff22;
+ font-size:9px;
+}
+
+.left{left:7px}
+.right{right:7px}
+
+.panel-title{
+ opacity:.6;
+ letter-spacing:2px;
+ margin-bottom:8px;
+}
+
+.row{
+ display:flex;
+ justify-content:space-between;
+ gap:8px;
+ margin:7px 0;
+}
+
+.bottom{
+ position:absolute;
+ left:50%;
+ bottom:8px;
+ transform:translateX(-50%);
+ width:95%;
+ max-width:600px;
+ text-align:center;
+}
+
+
+.creator-credit{
+  margin-top:8px;
+  font-size:9px;
+  letter-spacing:3px;
+  opacity:.65;
+  text-shadow:0 0 8px #00eaff;
+}
+
+button{
+ pointer-events:auto;
+ padding:11px 15px;
+ margin:4px;
+ border:1px solid #00eaff;
+ border-radius:25px;
+ color:#00eaff;
+ background:#000d;
+ font-family:monospace;
+ box-shadow:0 0 12px #00eaff55;
+}
+
+button:active{
+ transform:scale(.96);
+}
+
+.output{
+ margin:5px auto;
+ padding:7px;
+ min-height:28px;
+ border:1px solid #00eaff44;
+ background:#000b;
+ font-size:9px;
+}
+
+#camera{
+ position:fixed;
+ right:8px;
+ bottom:105px;
+ width:125px;
+ height:94px;
+ object-fit:cover;
+ transform:scaleX(-1);
+ opacity:.2;
+ display:none;
+ border:1px solid #00eaff55;
+}
+
+.hand-active #camera{
+ display:block;
+}
+</style>
+<style>
+</style>
+
+<style>
+#jarvisCommandBar{
+  position:fixed;
+  left:50%;
+  bottom:18px;
+  transform:translateX(-50%);
+  z-index:9999;
+  width:min(88vw,520px);
+  display:flex;
+  gap:8px;
+  padding:8px;
+  border:1px solid rgba(0,255,255,.45);
+  border-radius:18px;
+  background:rgba(0,10,18,.78);
+  backdrop-filter:blur(10px);
+  box-shadow:0 0 18px rgba(0,255,255,.22);
+}
+#jarvisCommandInput{
+  flex:1;
+  min-width:0;
+  padding:10px 13px;
+  border:0;
+  outline:0;
+  border-radius:12px;
+  background:rgba(0,255,255,.07);
+  color:#fff;
+  font-size:14px;
+}
+#jarvisCommandInput::placeholder{color:rgba(255,255,255,.5)}
+#jarvisCommandSend{
+  border:0;
+  border-radius:12px;
+  padding:0 16px;
+  background:rgba(0,220,255,.18);
+  color:#fff;
+  font-weight:bold;
+  cursor:pointer;
+}
+</style>
+
+<style id="jarvisControlsCSS">
+#jarvisCommandBar{
+  position:fixed;
+  left:50%;
+  bottom:18px;
+  transform:translateX(-50%);
+  z-index:9999;
+  width:min(90vw,560px);
+  display:flex;
+  align-items:center;
+  gap:7px;
+  padding:7px;
+  border:1px solid rgba(0,255,255,.45);
+  border-radius:18px;
+  background:rgba(0,10,18,.82);
+  backdrop-filter:blur(10px);
+  box-shadow:0 0 18px rgba(0,255,255,.22);
+}
+
+#jarvisMicButton,
+#jarvisCommandSend{
+  height:40px;
+  border:0;
+  border-radius:12px;
+  color:#fff;
+  background:rgba(0,220,255,.16);
+  cursor:pointer;
+  font-weight:bold;
+}
+
+#jarvisMicButton{
+  width:48px;
+  font-size:19px;
+}
+
+#jarvisCommandSend{
+  padding:0 14px;
+}
+
+#jarvisCommandInput{
+  flex:1;
+  min-width:0;
+  height:40px;
+  box-sizing:border-box;
+  padding:0 12px;
+  border:0;
+  outline:0;
+  border-radius:12px;
+  background:rgba(0,255,255,.06);
+  color:#fff;
+  font-size:14px;
+}
+
+#jarvisCommandInput::placeholder{
+  color:rgba(255,255,255,.5);
+}
+
+#jarvisHandPanel{
+  position:fixed;
+  top:18px;
+  right:18px;
+  z-index:9999;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+#jarvisHandPanel button{
+  border:1px solid rgba(0,255,255,.42);
+  border-radius:12px;
+  padding:10px 13px;
+  background:rgba(0,10,18,.78);
+  color:#fff;
+  font-size:12px;
+  font-weight:bold;
+  cursor:pointer;
+  backdrop-filter:blur(8px);
+  box-shadow:0 0 12px rgba(0,255,255,.16);
+}
+</style>
+
+<style id="jarvisOutputTopCSS">
+#heard{
+  position:fixed !important;
+  top:70px !important;
+  left:50% !important;
+  transform:translateX(-50%) !important;
+  z-index:9990 !important;
+  width:min(86vw,700px) !important;
+  text-align:center !important;
+}
+</style>
+
+<style id="jarvisOutputMoveCSS">
+.bottom{
+  position:relative !important;
+}
+
+.bottom #heard{
+  position:fixed !important;
+  top:72px !important;
+  left:50% !important;
+  transform:translateX(-50%) !important;
+  width:min(82vw,700px) !important;
+  margin:0 !important;
+  z-index:9990 !important;
+  text-align:center !important;
+}
+</style>
+
+<style id="jarvisAttachmentCSS">
+#jarvisAttachButton{
+  font-size:22px !important;
+  font-weight:bold;
+  min-width:42px;
+}
+
+#jarvisAttachMenu{
+  display:none;
+  position:fixed;
+  bottom:82px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:10001;
+  padding:8px;
+  gap:6px;
+  flex-direction:column;
+  border:1px solid #00eaff;
+  border-radius:12px;
+  background:rgba(0,10,20,.95);
+  box-shadow:0 0 18px #00eaff55;
+}
+
+#jarvisAttachMenu button{
+  min-width:150px;
+  padding:9px 12px;
+  border:1px solid #00eaff;
+  border-radius:8px;
+  background:#06151d;
+  color:#fff;
+  cursor:pointer;
+}
+</style>
+
+
+<style id="jarvisAttachmentFinalCSS">
+#jarvisAttachButton{
+  font-size:24px !important;
+  font-weight:bold !important;
+  min-width:42px !important;
+  padding:6px 10px !important;
+}
+
+#jarvisAttachMenu{
+  display:none;
+  position:fixed;
+  left:50%;
+  bottom:82px;
+  transform:translateX(-50%);
+  z-index:10050;
+  flex-direction:column;
+  gap:7px;
+  padding:10px;
+  border:1px solid #00eaff;
+  border-radius:14px;
+  background:rgba(0,10,20,.96);
+  box-shadow:0 0 20px rgba(0,234,255,.45);
+}
+
+#jarvisAttachMenu button{
+  min-width:160px;
+  padding:10px 14px;
+  border:1px solid #00eaff;
+  border-radius:9px;
+  background:#06151d;
+  color:white;
+  font-size:13px;
+}
+</style>
+
+</head>
+
+<body>
+
+<div id="scene"></div>
+
+<video
+ id="camera"
+ autoplay
+ muted
+ playsinline>
+</video>
+
+<div class="hud">
+
+<div class="title">J.A.R.V.I.S.</div>
+
+<div id="status" class="status">
+SYSTEM ONLINE
+</div>
+
+<div class="panel left">
+
+<div class="panel-title">SYSTEM</div>
+
+<div class="row">
+<span>CORE</span>
+<span id="coreState">ONLINE</span>
+</div>
+
+<div class="row">
+<span>VOICE</span>
+<span id="voiceState">READY</span>
+</div>
+
+<div class="row">
+<span>HAND</span>
+<span id="handState">OFF</span>
+</div>
+
+<div class="row">
+<span>HUD</span>
+<span>2.0</span>
+</div>
+
+</div>
+
+
+<div class="panel right">
+
+<div class="panel-title">CONTROL</div>
+
+<div class="row">
+<span>GESTURE</span>
+<span id="gesture">NONE</span>
+</div>
+
+<div class="row">
+<span>DEPTH</span>
+<span id="depth">100%</span>
+</div>
+
+<div class="row">
+<span>MODE</span>
+<span id="mode">IDLE</span>
+</div>
+
+</div>
+
+
+<div class="bottom">
+
+
+
+<button onclick="startHandControl()" style="display:none">
+HAND CONTROL
+</button>
+
+<button onclick="stopHandControl()" style="display:none">
+STOP HAND
+</button>
+
+<div id="heard" class="output">
+JARVIS READY...
+</div>
+
+</div>
+
+</div>
+
+
+<!-- THREE.JS -->
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+
+<!-- MEDIAPIPE -->
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+
+
+<script>
+
+/* =========================================================
+   JARVIS 2.0
+   CORE
+   ========================================================= */
+
+"use strict";
+
+
+const $ = id =>
+document.getElementById(id);
+
+
+/* =========================================================
+   THREE ENGINE
+   ========================================================= */
+
+let scene3D;
+let camera3D;
+let renderer;
+
+let hologram;
+let core;
+let inner;
+
+let ring1;
+let ring2;
+let ring3;
+
+let particles;
+
+
+function init3D(){
+
+try{
+
+scene3D =
+new THREE.Scene();
+
+
+camera3D =
+new THREE.PerspectiveCamera(
+55,
+innerWidth / innerHeight,
+0.1,
+1000
+);
+
+camera3D.position.z = 7;
+
+
+renderer =
+new THREE.WebGLRenderer({
+antialias:true,
+alpha:true
+});
+
+
+renderer.setPixelRatio(
+Math.min(
+window.devicePixelRatio || 1,
+1.5
+)
+);
+
+
+renderer.setSize(
+innerWidth,
+innerHeight
+);
+
+
+$("scene").appendChild(
+renderer.domElement
+);
+
+
+/* MAIN GROUP */
+
+hologram =
+new THREE.Group();
+
+scene3D.add(
+hologram
+);
+
+
+/* CORE */
+
+core =
+new THREE.Mesh(
+
+new THREE.IcosahedronGeometry(
+1,
+2
+),
+
+new THREE.MeshBasicMaterial({
+color:0x00eaff,
+wireframe:true,
+transparent:true,
+opacity:.95
+})
+
+);
+
+hologram.add(core);
+
+
+/* INNER */
+
+inner =
+new THREE.Mesh(
+
+new THREE.IcosahedronGeometry(
+.52,
+2
+),
+
+new THREE.MeshBasicMaterial({
+color:0x00eaff,
+wireframe:true,
+transparent:true,
+opacity:.75
+})
+
+);
+
+hologram.add(inner);
+
+
+/* RING */
+
+function makeRing(
+size,
+rx,
+ry
+){
+
+const r =
+new THREE.Mesh(
+
+new THREE.TorusGeometry(
+size,
+.018,
+12,
+100
+),
+
+new THREE.MeshBasicMaterial({
+color:0x00eaff,
+transparent:true,
+opacity:.75
+})
+
+);
+
+r.rotation.x = rx;
+r.rotation.y = ry;
+
+hologram.add(r);
+
+return r;
+}
+
+
+ring1 =
+makeRing(
+1.45,
+0,
+0
+);
+
+
+ring2 =
+makeRing(
+1.85,
+Math.PI/2,
+0
+);
+
+
+ring3 =
+makeRing(
+2.25,
+Math.PI/4,
+Math.PI/4
+);
+
+
+/* PARTICLES */
+
+const count = 700;
+
+const data =
+new Float32Array(
+count * 3
+);
+
+for(
+let i=0;
+i<data.length;
+i++
+){
+
+data[i] =
+(Math.random()-.5)*15;
+
+}
+
+
+const geometry =
+new THREE.BufferGeometry();
+
+
+geometry.setAttribute(
+"position",
+new THREE.BufferAttribute(
+data,
+3
+)
+);
+
+
+particles =
+new THREE.Points(
+
+geometry,
+
+new THREE.PointsMaterial({
+color:0x00eaff,
+size:.025,
+transparent:true,
+opacity:.65
+})
+
+);
+
+
+scene3D.add(
+particles
+);
+
+
+return true;
+
+}catch(error){
+
+console.log(
+"3D error:",
+error
+);
+
+return false;
+
+}
+
+}
+
+
+/* =========================================================
+   HAND STATE
+   ========================================================= */
+
+let handActive = false;
+
+let handStream = null;
+
+let handCam = null;
+
+let hands = null;
+
+let handX = .5;
+let handY = .5;
+
+let targetX = 0;
+let targetY = 0;
+let targetZ = 0;
+
+let targetScale = 1;
+
+let currentScale = 1;
+
+let grabbing = false;
+
+let grabX = 0;
+let grabY = 0;
+
+
+/* =========================================================
+   ANIMATION
+   ========================================================= */
+
+function animate(){
+
+requestAnimationFrame(
+animate
+);
+
+
+if(
+!renderer ||
+!scene3D
+)
+return;
+
+
+const time =
+Date.now();
+
+
+let speed =
+0.006;
+
+
+if(
+$("status").innerText ===
+"LISTENING..."
+)
+speed = .018;
+
+
+if(
+$("status").innerText ===
+"THINKING..."
+)
+speed = .025;
+
+
+if(
+$("status").innerText ===
+"SPEAKING..."
+)
+speed = .02;
+
+
+/* CORE */
+
+core.rotation.x +=
+speed;
+
+core.rotation.y +=
+speed * 1.4;
+
+inner.rotation.x -=
+speed * 1.2;
+
+inner.rotation.y -=
+speed;
+
+
+/* RINGS */
+
+ring1.rotation.z +=
+speed;
+
+ring2.rotation.z -=
+speed * 1.3;
+
+ring3.rotation.z +=
+speed * .8;
+
+
+/* PARTICLES */
+
+particles.rotation.y +=
+speed * .05;
+
+
+/* POSITION */
+
+hologram.position.x +=
+(targetX -
+hologram.position.x) * .08;
+
+
+hologram.position.y +=
+(targetY -
+hologram.position.y) * .08;
+
+
+hologram.position.z +=
+(targetZ -
+hologram.position.z) * .08;
+
+
+/* SCALE */
+
+currentScale +=
+(targetScale -
+currentScale) * .1;
+
+
+hologram.scale.set(
+currentScale,
+currentScale,
+currentScale
+);
+
+
+/* HAND TILT */
+
+hologram.rotation.y +=
+(
+(handX-.5)*1.2 -
+hologram.rotation.y
+) * .025;
+
+
+hologram.rotation.x +=
+(
+(handY-.5)*.8 -
+hologram.rotation.x
+) * .025;
+
+
+/* RENDER */
+
+renderer.render(
+scene3D,
+camera3D
+);
+
+}
+
+
+/* =========================================================
+   RESIZE
+   ========================================================= */
+
+window.addEventListener(
+"resize",
+function(){
+
+if(
+!camera3D ||
+!renderer
+)
+return;
+
+
+camera3D.aspect =
+innerWidth / innerHeight;
+
+
+camera3D.updateProjectionMatrix();
+
+
+renderer.setSize(
+innerWidth,
+innerHeight
+);
+
+}
+);
+
+
+/* =========================================================
+   VOICE
+   ========================================================= */
+
+function jarvisSpeak(
+text
+){
+
+if(
+!("speechSynthesis" in window)
+){
+
+return;
+
+}
+
+
+$("status").innerText =
+"SPEAKING...";
+
+$("voiceState").innerText =
+"SPEAKING";
+
+
+speechSynthesis.cancel();
+
+
+const utter =
+new SpeechSynthesisUtterance(
+text
+);
+
+
+utter.lang =
+"en-US";
+
+utter.rate =
+.88;
+
+utter.pitch =
+.72;
+
+utter.volume =
+1;
+
+
+const voices =
+speechSynthesis.getVoices();
+
+
+const preferred =
+voices.find(
+v =>
+/male|david|mark|daniel|alex|james/i
+.test(v.name)
+&&
+/en/i.test(v.lang)
+);
+
+
+if(
+preferred
+)
+utter.voice =
+preferred;
+
+
+utter.onend =
+function(){
+
+$("status").innerText =
+"SYSTEM ONLINE";
+
+$("voiceState").innerText =
+"READY";
+
+};
+
+
+utter.onerror =
+function(){
+
+$("status").innerText =
+"SYSTEM ONLINE";
+
+$("voiceState").innerText =
+"READY";
+
+};
+
+
+speechSynthesis.speak(
+utter
+);
+
+}
+
+
+/* =========================================================
+   VOICE INPUT
+   ========================================================= */
+
+function jarvisListen(){
+
+const Recognition =
+window.SpeechRecognition ||
+window.webkitSpeechRecognition;
+
+
+if(
+!Recognition
+){
+
+$("heard").innerText =
+"Speech recognition unavailable.";
+
+return;
+
+}
+
+
+const recognition =
+new Recognition();
+
+
+recognition.lang =
+"en-US";
+
+
+recognition.continuous =
+false;
+
+
+recognition.interimResults =
+false;
+
+
+$("status").innerText =
+"LISTENING...";
+
+$("voiceState").innerText =
+"LISTENING";
+
+
+$("heard").innerText =
+"Speak now...";
+
+
+try{
+
+recognition.start();
+
+}catch(error){
+
+return;
+
+}
+
+
+let jarvisLastReply = "";
+
+recognition.onresult =
+async function(event){
+
+const command =
+event.results[0][0]
+.transcript;
+
+
+$("heard").innerText =
+"You: " + command;
+
+
+$("status").innerText =
+"THINKING...";
+
+
+$("voiceState").innerText =
+"PROCESSING";
+
+
+const text =
+command.toLowerCase();
+
+
+/* LOCAL COMMANDS */
+
+
+if(
+text.includes(
+"open youtube"
+)
+){
+
+window.open(
+"https://www.youtube.com",
+"_blank"
+);
+
+jarvisLastReply = "Opening YouTube.";
+
+return;
+
+}
+
+
+if(
+text.includes(
+"open google"
+)
+){
+
+window.open(
+"https://www.google.com",
+"_blank"
+);
+
+jarvisLastReply = "Opening Google.";
+
+return;
+
+}
+
+
+if(
+text.includes(
+"open chatgpt"
+)
+){
+
+window.open(
+"https://chatgpt.com",
+"_blank"
+);
+
+jarvisLastReply = "Opening ChatGPT.";
+
+return;
+
+}
+
+
+if(
+text.includes(
+"open whatsapp"
+)
+){
+
+window.open(
+"https://web.whatsapp.com",
+"_blank"
+);
+
+jarvisLastReply = "Opening WhatsApp.";
+
+return;
+
+}
+
+
+/* BACKEND */
+
+try{
+
+const response =
+await fetch(
+"http://127.0.0.1:8081/ask",
+{
+method:"POST",
+
+headers:{
+"Content-Type":
+"application/json"
+},
+
+body:
+JSON.stringify({
+command:command
+})
+}
+);
+
+
+if(
+response.ok
+){
+
+const data =
+await response.json();
+
+
+const reply =
+data.reply ||
+"Command processed.";
+
+
+$("heard").innerText =
+"JARVIS: " + reply;
+
+
+jarvisLastReply = reply;
+
+
+return;
+
+}
+
+}catch(error){
+
+console.log(
+"Backend error:",
+error
+);
+
+}
+
+
+jarvisLastReply = "I cannot reach my AI backend right now.";
+
+};
+
+
+recognition.onerror =
+function(event){
+
+$("status").innerText =
+"SYSTEM ONLINE";
+
+$("voiceState").innerText =
+"READY";
+
+$("heard").innerText =
+"Mic: " + event.error;
+
+};
+
+}
+
+
+/* =========================================================
+   HAND CONTROL
+   ========================================================= */
+
+async function startHandControl(){
+
+if(
+handActive
+){
+
+$("handState").innerText =
+"TRACKING";
+
+return;
+
+}
+
+
+/* MEDIA API CHECK */
+
+if(
+!navigator.mediaDevices ||
+!navigator.mediaDevices.getUserMedia
+){
+
+$("handState").innerText =
+"ERROR";
+
+$("heard").innerText =
+"Camera API unavailable.";
+
+return;
+
+}
+
+
+/* MEDIAPIPE CHECK */
+
+if(
+typeof Hands ===
+"undefined"
+){
+
+$("handState").innerText =
+"ERROR";
+
+$("heard").innerText =
+"Hand tracking library unavailable.";
+
+return;
+
+}
+
+
+if(
+typeof Camera ===
+"undefined"
+){
+
+$("handState").innerText =
+"ERROR";
+
+$("heard").innerText =
+"Camera helper unavailable.";
+
+return;
+
+}
+
+
+try{
+
+$("handState").innerText =
+"STARTING";
+
+
+/* CAMERA */
+
+handStream =
+await navigator.mediaDevices
+.getUserMedia({
+
+video:{
+facingMode:"user",
+width:640,
+height:480
+},
+
+audio:false
+
+});
+
+
+const video =
+$("camera");
+
+
+video.srcObject =
+handStream;
+
+
+video.muted =
+true;
+
+
+await video.play();
+
+
+document.body.classList.add(
+"hand-active"
+);
+
+
+/* HAND MODEL */
+
+hands =
+new Hands({
+
+locateFile:function(file){
+    return "https://cdn.jsdelivr.net/npm/@mediapipe/hands/"+file;
+}
+
+});
+
+
+hands.setOptions({
+
+maxNumHands:1,
+
+modelComplexity:0,
+
+minDetectionConfidence:.55,
+
+minTrackingConfidence:.55
+
+});
+
+
+hands.onResults(
+handleHandResults
+);
+
+
+/* CAMERA LOOP */
+
+handCam =
+new Camera(
+video,
+{
+
+onFrame:
+async function(){
+
+if(
+handActive ||
+!handActive
+){
+
+try{
+
+await hands.send({
+image:video
+});
+
+}catch(error){
+
+console.log(
+"Tracking frame error:",
+error
+);
+
+}
+
+}
+
+},
+
+width:640,
+height:480
+
+}
+);
+
+
+/* IMPORTANT */
+
+handActive =
+true;
+
+
+handCam.start();
+
+
+$("handState").innerText =
+"TRACKING";
+
+
+$("heard").innerText =
+"Hand control online.";
+
+
+}catch(error){
+
+console.log(
+"Hand startup error:",
+error
+);
+
+
+$("handState").innerText =
+"ERROR";
+
+
+$("heard").innerText =
+"Camera permission required.";
+
+
+if(
+handStream
+){
+
+handStream
+.getTracks()
+.forEach(
+track =>
+track.stop()
+);
+
+handStream =
+null;
+
+}
+
+
+document.body.classList.remove(
+"hand-active"
+);
+
+}
+
+}
+
+
+/* =========================================================
+   STOP HAND
+   ========================================================= */
+
+function stopHandControl(){
+
+handActive =
+false;
+
+
+try{
+
+if(
+handCam &&
+typeof handCam.stop ===
+"function"
+){
+
+handCam.stop();
+
+}
+
+}catch(error){}
+
+
+if(
+handStream
+){
+
+handStream
+.getTracks()
+.forEach(
+track =>
+track.stop()
+);
+
+}
+
+
+handStream =
+null;
+
+handCam =
+null;
+
+hands =
+null;
+
+
+document.body.classList.remove(
+"hand-active"
+);
+
+
+$("handState").innerText =
+"OFF";
+
+$("gesture").innerText =
+"NONE";
+
+$("mode").innerText =
+"IDLE";
+
+$("depth").innerText =
+"100%";
+
+
+targetX =
+0;
+
+targetY =
+0;
+
+targetZ =
+0;
+
+targetScale =
+1;
+
+grabbing =
+false;
+
+
+$("heard").innerText =
+"Hand control stopped.";
+
+}
+
+
+/* =========================================================
+   DISTANCE
+   ========================================================= */
+
+function distance(
+a,
+b
+){
+
+const dx =
+a.x-b.x;
+
+const dy =
+a.y-b.y;
+
+
+return Math.sqrt(
+dx*dx + dy*dy
+);
+
+}
+
+
+/* =========================================================
+   HAND RESULTS
+   ========================================================= */
+
+function handleHandResults(
+results
+){
+
+if(
+!handActive
+)
+return;
+
+
+if(
+!results ||
+!results.multiHandLandmarks ||
+!results.multiHandLandmarks.length
+){
+
+$("handState").innerText =
+"SEARCHING";
+
+$("gesture").innerText =
+"NONE";
+
+
+grabbing =
+false;
+
+
+targetScale +=
+(1-targetScale)*.08;
+
+
+targetZ +=
+(0-targetZ)*.08;
+
+
+return;
+
+}
+
+
+const lm =
+results.multiHandLandmarks[0];
+
+
+$("handState").innerText =
+"TRACKING";
+
+
+/* INDEX */
+
+const index =
+lm[8];
+
+
+handX +=
+(index.x-handX)*.15;
+
+
+handY +=
+(index.y-handY)*.15;
+
+
+/* PINCH */
+
+const pinch =
+distance(
+lm[4],
+lm[8]
+);
+
+
+/* GRAB */
+
+if(
+pinch < .07
+){
+
+if(
+!grabbing
+){
+
+grabbing =
+true;
+
+grabX =
+index.x;
+
+grabY =
+index.y;
+
+}
+
+
+const dx =
+index.x-grabX;
+
+const dy =
+index.y-grabY;
+
+
+targetX =
+dx*5;
+
+
+targetY =
+-dy*5;
+
+
+targetZ =
+1.8;
+
+
+targetScale =
+1.35;
+
+
+$("gesture").innerText =
+"GRAB";
+
+
+$("mode").innerText =
+"GRABBED";
+
+
+$("depth").innerText =
+"180%";
+
+}
+
+
+/* OPEN */
+
+else{
+
+if(
+grabbing
+){
+
+grabbing =
+false;
+
+$("mode").innerText =
+"RELEASED";
+
+}
+
+
+targetZ +=
+(0-targetZ)*.12;
+
+
+targetScale +=
+(1-targetScale)*.12;
+
+
+$("gesture").innerText =
+"OPEN";
+
+
+$("depth").innerText =
+"100%";
+
+}
+
+
+/* OPEN PALM */
+
+const palm =
+distance(
+lm[0],
+lm[12]
+);
+
+
+if(
+palm > .38 &&
+!grabbing
+){
+
+targetScale =
+1.25;
+
+targetZ =
+.65;
+
+
+$("gesture").innerText =
+"OPEN PALM";
+
+
+$("depth").innerText =
+"125%";
+
+}
+
+}
+
+
+/* =========================================================
+   STARTUP
+   ========================================================= */
+
+function boot(){
+
+const ok =
+init3D();
+
+
+if(
+!ok
+){
+
+$("coreState").innerText =
+"ERROR";
+
+$("status").innerText =
+"3D ENGINE ERROR";
+
+}else{
+
+animate();
+
+}
+
+
+if(
+"speechSynthesis" in window
+){
+
+speechSynthesis.getVoices();
+
+speechSynthesis.onvoiceschanged =
+function(){
+
+speechSynthesis.getVoices();
+
+};
+
+}
+
+
+$("heard").innerText =
+"JARVIS 2.0 ONLINE.";
+
+}
+
+
+window.addEventListener(
+"load",
+boot
+);
+
+</script>
+
+<div id="jarvisMadeBy" style="position:fixed;top:48px;left:0;right:0;text-align:center;font-size:9px;letter-spacing:3px;opacity:.65;text-shadow:0 0 8px #00eaff;z-index:9999;">MADE BY RAKIB RAHIM</div>
+
+
+
+</div>
+<script>
+function testJarvisVoice(mode){
+ if(!window.speechSynthesis)return;
+ speechSynthesis.cancel();
+ const u=new SpeechSynthesisUtterance("Hello Rakib. JARVIS voice systems are online.");
+ const voices=speechSynthesis.getVoices();
+ const v=voices.find(x=>/Google US English|Microsoft.*English/i.test(x.name))||voices.find(x=>/^en(-US)?/i.test(x.lang));
+ if(v)u.voice=v;
+ u.lang="en-US";u.volume=1;
+ if(mode==="deep"){u.rate=.82;u.pitch=.55}
+ if(mode==="smooth"){u.rate=.88;u.pitch=.72}
+ if(mode==="robotic"){u.rate=.72;u.pitch=.35}
+ speechSynthesis.speak(u);
+}
+</script>
+
+<style>
+#voiceTest5{position:fixed;top:18px;right:18px;width:260px;padding:14px;border:1px solid #00eaff;border-radius:14px;background:rgba(0,10,20,.88);box-shadow:0 0 20px #00eaff55;z-index:10000;font-family:Arial,sans-serif;color:#fff}
+#voiceTest5 h3{margin:0 0 10px;text-align:center;color:#00eaff;letter-spacing:2px;font-size:14px}
+#voiceTest5 button{width:100%;margin:4px 0;padding:9px;border:1px solid #00eaff;border-radius:8px;background:#06151d;color:#fff;font-size:11px;letter-spacing:1px}
+#voiceTest5 button:active{transform:scale(.98);background:#0b3440}
+</style>
+
+<script>
+function testJVoice(style, rate, pitch){
+  if(!('speechSynthesis' in window)){alert('Speech synthesis is not supported in this browser.');return;}
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance("Hello Rakib. JARVIS voice systems are online. This is the "+style+" voice test.");
+  u.lang="en-US"; u.rate=rate; u.pitch=pitch; u.volume=1;
+  const voices=speechSynthesis.getVoices();
+  const preferred=voices.find(v=>/Google US English|Microsoft.*English|English United States|en-US/i.test(v.name));
+  if(preferred) u.voice=preferred;
+  speechSynthesis.speak(u);
+}
+</script>
+
+
+
+
+<div id="jarvisCommandBar">
+  <button id="jarvisAttachButton" type="button" title="Camera, Photo, Files">＋</button>
+  <button id="jarvisMicButton" title="Start microphone">🎙</button>
+  <button id="jarvisSpeakButton" type="button">🔊 SPEAK</button>
+  <input id="jarvisCommandInput" type="text" placeholder="Type command...">
+  <button id="jarvisCommandSend">SEND</button>
+</div>
+
+<div id="jarvisAttachMenu">
+  <button id="jarvisCameraOption" type="button">📷 CAMERA</button>
+  <button id="jarvisPhotoOption" type="button">🖼️ PHOTO</button>
+  <button id="jarvisFileOption" type="button">📁 FILES</button>
+</div>
+
+<input id="jarvisCameraInput"
+       type="file"
+       accept="image/*"
+       capture="environment"
+       style="display:none">
+
+<input id="jarvisPhotoInput"
+       type="file"
+       accept="image/*"
+       style="display:none">
+
+<input id="jarvisFileInput"
+       type="file"
+       accept=".pdf,.txt,.md,.csv,.json,.doc,.docx,.xls,.xlsx"
+       style="display:none">
+
+<div id="jarvisHandPanel">
+  <button onclick="startHandControl()">✋ HAND CONTROL</button>
+  <button onclick="stopHandControl()">✋ STOP HAND</button>
+</div>
+
+<script>
+(function(){
+  const input=document.getElementById("jarvisCommandInput");
+  const send=document.getElementById("jarvisCommandSend");
+  const mic=document.getElementById("jarvisMicButton");
+
+  async function sendCommand(){
+    const command=input.value.trim();
+    if(!command)return;
+
+    input.value="";
+
+    const heard=document.getElementById("heard");
+    const status=document.getElementById("status");
+    const voiceState=document.getElementById("voiceState");
+
+    if(heard) heard.innerText="You: "+command;
+    if(status) status.innerText="THINKING...";
+    if(voiceState) voiceState.innerText="PROCESSING";
+
+    const text=command.toLowerCase();
+
+    if(text==="open youtube"){
+      window.open("https://www.youtube.com","_blank");
+      return;
+    }
+
+    if(text==="open google"){
+      window.open("https://www.google.com","_blank");
+      return;
+    }
+
+    if(text==="open chatgpt"){
+      window.open("https://chatgpt.com","_blank");
+      return;
+    }
+
+    if(text==="open whatsapp"){
+      window.open("https://web.whatsapp.com","_blank");
+      return;
+    }
+
+    try{
+      const response=await fetch("http://127.0.0.1:8081/ask",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({command:command})
+      });
+
+      const data=await response.json();
+      const reply=data.reply || "Command processed.";
+
+      if(heard) heard.innerText="JARVIS: "+reply;
+      jarvisLastReply = reply;
+      if(status) status.innerText="SYSTEM ONLINE";
+      if(voiceState) voiceState.innerText="READY";
+
+    }catch(e){
+      if(heard) heard.innerText="JARVIS: Backend unavailable.";
+      if(status) status.innerText="SYSTEM ONLINE";
+      if(voiceState) voiceState.innerText="READY";
+    }
+  }
+
+  const jarvisSpeakButton =
+document.getElementById("jarvisSpeakButton");
+
+if(jarvisSpeakButton){
+  jarvisSpeakButton.addEventListener("click",function(){
+    if(jarvisLastReply && typeof jarvisSpeak==="function"){
+      jarvisSpeak(jarvisLastReply);
+    }
+  });
+}
+
+send.addEventListener("click",sendCommand);
+
+  input.addEventListener("keydown",function(e){
+    if(e.key==="Enter") sendCommand();
+  });
+
+  mic.addEventListener("click",function(){
+    try{
+      recognition.start();
+    }catch(e){}
+  });
+})();
+</script>
+
+<script id="jarvisAttachmentFinalJS">
+(function(){
+
+  const plus = document.getElementById("jarvisAttachButton");
+  const menu = document.getElementById("jarvisAttachMenu");
+
+  const camera = document.getElementById("jarvisCameraOption");
+  const photo = document.getElementById("jarvisPhotoOption");
+  const files = document.getElementById("jarvisFileOption");
+
+  const cameraInput = document.getElementById("jarvisCameraInput");
+  const photoInput = document.getElementById("jarvisPhotoInput");
+  const fileInput = document.getElementById("jarvisFileInput");
+
+  const commandInput =
+    document.getElementById("jarvisCommandInput");
+
+  function showMenu(){
+    if(!menu) return;
+
+    menu.style.display =
+      menu.style.display === "flex"
+      ? "none"
+      : "flex";
+  }
+
+  function readAsDataURL(file){
+    return new Promise(function(resolve,reject){
+
+      const reader = new FileReader();
+
+      reader.onload = function(){
+        resolve(reader.result);
+      };
+
+      reader.onerror = function(){
+        reject(new Error("Could not read file"));
+      };
+
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function analyzeFile(file){
+
+    if(!file) return;
+
+    if(menu)
+      menu.style.display = "none";
+
+    const heard =
+      document.getElementById("heard");
+
+    const status =
+      document.getElementById("status");
+
+    const voiceState =
+      document.getElementById("voiceState");
+
+    if(heard)
+      heard.innerText =
+        "You: Reading " + file.name + "...";
+
+    if(status)
+      status.innerText = "ANALYZING...";
+
+    if(voiceState)
+      voiceState.innerText = "PROCESSING";
+
+    try{
+
+      const dataURL =
+        await readAsDataURL(file);
+
+      const question =
+        commandInput.value.trim() ||
+        "Read this attachment and tell me what it contains.";
+
+      commandInput.value = "";
+
+      const response = await fetch(
+        "http://127.0.0.1:8081/ask",
+        {
+          method:"POST",
+          headers:{
+            "Content-Type":"application/json"
+          },
+          body:JSON.stringify({
+            command:question,
+            attachment:{
+              name:file.name,
+              type:file.type || "application/octet-stream",
+              data:dataURL
+            }
+          })
+        }
+      );
+
+      const data = await response.json();
+
+      const reply =
+        data.reply ||
+        "I could not analyze this attachment.";
+
+      if(heard)
+        heard.innerText = "JARVIS: " + reply;
+
+      if(typeof jarvisLastReply !== "undefined")
+        jarvisLastReply = reply;
+
+      if(status)
+        status.innerText = "SYSTEM ONLINE";
+
+      if(voiceState)
+        voiceState.innerText = "READY";
+
+    }catch(error){
+
+      console.log("JARVIS attachment error:",error);
+
+      if(heard)
+        heard.innerText =
+          "JARVIS: I could not read this attachment.";
+
+      if(status)
+        status.innerText = "SYSTEM ONLINE";
+
+      if(voiceState)
+        voiceState.innerText = "READY";
+    }
+  }
+
+  if(plus)
+    plus.addEventListener("click",showMenu);
+
+  if(camera)
+    camera.addEventListener("click",function(){
+      cameraInput.click();
+    });
+
+  if(photo)
+    photo.addEventListener("click",function(){
+      photoInput.click();
+    });
+
+  if(files)
+    files.addEventListener("click",function(){
+      fileInput.click();
+    });
+
+  if(cameraInput)
+    cameraInput.addEventListener("change",function(){
+      if(this.files && this.files[0])
+        analyzeFile(this.files[0]);
+
+      this.value = "";
+    });
+
+  if(photoInput)
+    photoInput.addEventListener("change",function(){
+      if(this.files && this.files[0])
+        analyzeFile(this.files[0]);
+
+      this.value = "";
+    });
+
+  if(fileInput)
+    fileInput.addEventListener("change",function(){
+      if(this.files && this.files[0])
+        analyzeFile(this.files[0]);
+
+      this.value = "";
+    });
+
+})();
+})();
+<script>
+/* JARVIS 3D TOUCH CONTROL — MASTER */
+
+(function(){
+
+"use strict";
+
+function setupJarvisTouch(){
+
+    if(
+        typeof renderer === "undefined" ||
+        !renderer ||
+        !renderer.domElement ||
+        typeof hologram === "undefined" ||
+        !hologram ||
+        typeof camera3D === "undefined" ||
+        !camera3D
+    ){
+        setTimeout(setupJarvisTouch,500);
+        return;
+    }
+
+    const canvas = renderer.domElement;
+
+    canvas.style.touchAction = "none";
+    canvas.style.userSelect = "none";
+    canvas.style.webkitUserSelect = "none";
+
+    let dragging = false;
+    let lastX = 0;
+    let lastY = 0;
+    let lastTap = 0;
+
+    let pinchStart = 0;
+    let pinchZoomStart = 7;
+
+
+    function distance(a,b){
+
+        const dx =
+            a.clientX - b.clientX;
+
+        const dy =
+            a.clientY - b.clientY;
+
+        return Math.sqrt(
+            dx * dx + dy * dy
+        );
+    }
+
+
+    function resetCore(){
+
+        hologram.rotation.x = 0;
+        hologram.rotation.y = 0;
+
+        camera3D.position.z = 7;
+
+        targetX = 0;
+        targetY = 0;
+        targetZ = 0;
+
+        targetScale = 1;
+
+        $("heard").innerText =
+            "3D CORE RESET.";
+
+    }
+
+
+    canvas.addEventListener(
+        "touchstart",
+        function(e){
+
+            e.preventDefault();
+
+            const now = Date.now();
+
+            if(
+                e.touches.length === 1 &&
+                now - lastTap < 320
+            ){
+
+                resetCore();
+
+                lastTap = 0;
+
+                return;
+            }
+
+            lastTap = now;
+
+
+            if(
+                e.touches.length === 2
+            ){
+
+                dragging = false;
+
+                pinchStart =
+                    distance(
+                        e.touches[0],
+                        e.touches[1]
+                    );
+
+                pinchZoomStart =
+                    camera3D.position.z;
+
+                return;
+            }
+
+
+            if(
+                e.touches.length === 1
+            ){
+
+                dragging = true;
+
+                lastX =
+                    e.touches[0].clientX;
+
+                lastY =
+                    e.touches[0].clientY;
+            }
+
+        },
+        {
+            passive:false
+        }
+    );
+
+
+    canvas.addEventListener(
+        "touchmove",
+        function(e){
+
+            e.preventDefault();
+
+
+            /* PINCH ZOOM */
+
+            if(
+                e.touches.length === 2
+            ){
+
+                const current =
+                    distance(
+                        e.touches[0],
+                        e.touches[1]
+                    );
+
+                if(pinchStart > 0){
+
+                    const change =
+                        current - pinchStart;
+
+                    camera3D.position.z =
+                        pinchZoomStart -
+                        change * .012;
+
+                    camera3D.position.z =
+                        Math.max(
+                            4.2,
+                            Math.min(
+                                10,
+                                camera3D.position.z
+                            )
+                        );
+                }
+
+                return;
+            }
+
+
+            /* FINGER ROTATION */
+
+            if(
+                e.touches.length === 1 &&
+                dragging
+            ){
+
+                const x =
+                    e.touches[0].clientX;
+
+                const y =
+                    e.touches[0].clientY;
+
+                const dx =
+                    x - lastX;
+
+                const dy =
+                    y - lastY;
+
+                lastX = x;
+                lastY = y;
+
+
+                hologram.rotation.y +=
+                    dx * .008;
+
+                hologram.rotation.x +=
+                    dy * .008;
+
+
+                hologram.rotation.x =
+                    Math.max(
+                        -Math.PI * 1.5,
+                        Math.min(
+                            Math.PI * 1.5,
+                            hologram.rotation.x
+                        )
+                    );
+
+            }
+
+        },
+        {
+            passive:false
+        }
+    );
+
+
+    canvas.addEventListener(
+        "touchend",
+        function(e){
+
+            e.preventDefault();
+
+            pinchStart = 0;
+
+            if(
+                e.touches.length === 0
+            ){
+
+                dragging = false;
+            }
+
+            if(
+                e.touches.length === 1
+            ){
+
+                dragging = true;
+
+                lastX =
+                    e.touches[0].clientX;
+
+                lastY =
+                    e.touches[0].clientY;
+            }
+
+        },
+        {
+            passive:false
+        }
+    );
+
+
+    canvas.addEventListener(
+        "touchcancel",
+        function(){
+
+            dragging = false;
+            pinchStart = 0;
+
+        },
+        {
+            passive:false
+        }
+    );
+
+
+    console.log(
+        "JARVIS 3D TOUCH CONTROL ONLINE"
+    );
+
+}
+
+
+window.addEventListener(
+    "load",
+    function(){
+
+        setTimeout(
+            setupJarvisTouch,
+            300
+        );
+
+    }
+);
+
+})();
+</script>
+
+</body>
+</html>
+</body>
+</html>
