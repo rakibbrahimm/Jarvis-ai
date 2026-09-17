@@ -1916,13 +1916,7 @@ function testJVoice(style, rate, pitch){
 
 
 
-<div id="jarvisCommandBar">
-  <button id="jarvisAttachButton" type="button" title="Camera, Photo, Files">＋</button>
-  <button id="jarvisMicButton" title="Start microphone">🎙</button>
-  <button id="jarvisSpeakButton" type="button">🔊 SPEAK</button>
-  <input id="jarvisCommandInput" type="text" placeholder="Type command...">
-  <button id="jarvisCommandSend">SEND</button>
-</div>
+
 
 <div id="jarvisAttachMenu">
   <button id="jarvisCameraOption" type="button">📷 CAMERA</button>
@@ -2513,3 +2507,17 @@ window.addEventListener(
 </html>
 </body>
 </html>
+
+<style id="JARVIS_CLEANUP">
+#commandBar,
+#command-bar,
+#jarvisCommandBar,
+.command-bar,
+#jarvisSpeakButton,
+#speakBtn,
+#speakButton,
+.speak-btn,
+.speak-button {
+    display:none !important;
+}
+</style>
