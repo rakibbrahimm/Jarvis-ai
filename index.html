@@ -2503,6 +2503,95 @@ window.addEventListener(
 })();
 </script>
 
+
+<button id="jarvisFloatingMic" type="button" aria-label="JARVIS Voice Input">
+  🎙️
+</button>
+
+<style id="JARVIS_FLOATING_MIC_STYLE">
+#jarvisFloatingMic {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,255,255,.75);
+  background: rgba(0,20,35,.72);
+  color: #00ffff;
+  font-size: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999999;
+  cursor: pointer;
+  box-shadow:
+    0 0 12px rgba(0,255,255,.7),
+    0 0 30px rgba(0,180,255,.35),
+    inset 0 0 15px rgba(0,255,255,.18);
+  backdrop-filter: blur(8px);
+  -webkit-tap-highlight-color: transparent;
+}
+
+#jarvisFloatingMic:active {
+  transform: scale(.92);
+}
+
+#jarvisFloatingMic.listening {
+  animation: jarvisMicPulse 1s infinite;
+  box-shadow:
+    0 0 18px rgba(0,255,255,1),
+    0 0 45px rgba(0,180,255,.7),
+    inset 0 0 20px rgba(0,255,255,.3);
+}
+
+@keyframes jarvisMicPulse {
+  0%,100% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+}
+
+@media (max-width:600px) {
+  #jarvisFloatingMic {
+    right: 16px;
+    bottom: 16px;
+    width: 58px;
+    height: 58px;
+    font-size: 25px;
+  }
+}
+</style>
+
+<script>
+(function () {
+  const mic = document.getElementById("jarvisFloatingMic");
+  if (!mic) return;
+
+  let listening = false;
+
+  mic.addEventListener("click", function () {
+    if (typeof jarvisListen === "function") {
+      try {
+        jarvisListen();
+        listening = !listening;
+        mic.classList.toggle("listening", listening);
+
+        setTimeout(() => {
+          listening = false;
+          mic.classList.remove("listening");
+        }, 10000);
+      } catch (e) {
+        console.error("JARVIS voice error:", e);
+        mic.classList.remove("listening");
+      }
+    } else if (typeof startListening === "function") {
+      startListening();
+    } else {
+      alert("JARVIS voice input is not available in this browser.");
+    }
+  });
+})();
+</script>
+
 </body>
 </html>
 </body>
