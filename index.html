@@ -2592,6 +2592,38 @@ window.addEventListener(
 })();
 </script>
 
+
+<script id="JARVIS_AUTO_VOICE">
+(function () {
+  window.jarvisAutoSpeak = function (text) {
+    if (!text) return;
+
+    text = String(text)
+      .replace(/<[^>]*>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if (!text) return;
+
+    if (typeof window.jarvisSpeak === "function") {
+      window.jarvisSpeak(text);
+    } else if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = "en-US";
+      u.rate = 0.88;
+      u.pitch = 0.72;
+      u.volume = 1;
+      window.speechSynthesis.speak(u);
+    }
+  };
+
+  window.addEventListener("JARVIS_REPLY", function (e) {
+    if (e.detail) window.jarvisAutoSpeak(e.detail);
+  });
+})();
+</script>
+
 </body>
 </html>
 </body>
