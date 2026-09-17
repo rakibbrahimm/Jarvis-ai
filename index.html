@@ -1901,7 +1901,7 @@ boot
 function testJarvisVoice(mode){
  if(!window.speechSynthesis)return;
  speechSynthesis.cancel();
- const u=new SpeechSynthesisUtterance("Hello Rakib. JARVIS voice systems are online.");
+ const u=new SpeechSynthesisUtterance("Hello. JARVIS voice systems are online.");
  const voices=speechSynthesis.getVoices();
  const v=voices.find(x=>/Google US English|Microsoft.*English/i.test(x.name))||voices.find(x=>/^en(-US)?/i.test(x.lang));
  if(v)u.voice=v;
@@ -1924,7 +1924,7 @@ function testJarvisVoice(mode){
 function testJVoice(style, rate, pitch){
   if(!('speechSynthesis' in window)){alert('Speech synthesis is not supported in this browser.');return;}
   speechSynthesis.cancel();
-  const u=new SpeechSynthesisUtterance("Hello Rakib. JARVIS voice systems are online. This is the "+style+" voice test.");
+  const u=new SpeechSynthesisUtterance("Hello. JARVIS voice systems are online. This is the "+style+" voice test.");
   u.lang="en-US"; u.rate=rate; u.pitch=pitch; u.volume=1;
   const voices=speechSynthesis.getVoices();
   const preferred=voices.find(v=>/Google US English|Microsoft.*English|English United States|en-US/i.test(v.name));
@@ -1975,6 +1975,17 @@ function testJVoice(style, rate, pitch){
     const command=input.value.trim();
     if(!command)return;
 
+    if(window.jarvisDetectName){
+      const detectedName = window.jarvisDetectName(command);
+      if(detectedName){
+        const nameReply = "Nice to meet you, " + detectedName + ". I will remember your name.";
+        if(typeof jarvisSpeak === "function") jarvisSpeak(nameReply);
+        const heardBox = document.getElementById("heard");
+        if(heardBox) heardBox.innerText = "JARVIS: " + nameReply;
+        return;
+      }
+    }
+
     input.value="";
 
     const heard=document.getElementById("heard");
@@ -2015,7 +2026,10 @@ function testJVoice(style, rate, pitch){
       });
 
       const data=await response.json();
-      const reply=data.reply || "Command processed.";
+      let reply=data.reply || "Command processed.";
+      if(window.jarvisPersonalizeReply){
+        reply = window.jarvisPersonalizeReply(reply);
+      }
 
       if(heard) heard.innerText="JARVIS: "+reply;
       jarvisLastReply = reply;
@@ -2641,6 +2655,88 @@ window.addEventListener(
   window.addEventListener("JARVIS_REPLY", function (e) {
     if (e.detail) window.jarvisAutoSpeak(e.detail);
   });
+})();
+</script>
+
+
+<script id="JARVIS_MULTI_USER">
+(function(){
+
+  const KEY = "JARVIS_USER_NAME";
+
+  window.jarvisGetUserName = function(){
+    return localStorage.getItem(KEY) || "";
+  };
+
+  window.jarvisSetUserName = function(name){
+    name = String(name || "").trim();
+    if(!name) return "";
+    localStorage.setItem(KEY, name);
+    return name;
+  };
+
+  window.jarvisClearUserName = function(){
+    localStorage.removeItem(KEY);
+  };
+
+  // Detect commands such as:
+  // "my name is Ahmed"
+  // "call me Ahmed"
+  window.jarvisDetectName = function(command){
+    const text = String(command || "").trim();
+
+    const patterns = [
+      /^(?:my name is|i am|i'm|call me)\s+(.+)$/i
+    ];
+
+    for(const pattern of patterns){
+      const match = text.match(pattern);
+      if(match){
+        let name = match[1].trim();
+        name = name.replace(/[.!?]+$/,"").trim();
+
+        if(name && name.length <= 40){
+          window.jarvisSetUserName(name);
+          return name;
+        }
+      }
+    }
+
+    return "";
+  };
+
+  // First-use setup
+  window.jarvisSetupUser = function(){
+    let name = window.jarvisGetUserName();
+
+    if(!name){
+      name = prompt("Welcome to JARVIS. What should I call you?");
+      if(name){
+        window.jarvisSetUserName(name);
+      }
+    }
+
+    return window.jarvisGetUserName();
+  };
+
+  // Personalize backend replies without allowing Rakib
+  // to remain as a fixed default.
+  window.jarvisPersonalizeReply = function(reply){
+    let text = String(reply || "");
+    const name = window.jarvisGetUserName();
+
+    if(name){
+      text = text.replace(/\bRakib\b/gi, name);
+    }
+
+    return text;
+  };
+
+  // Initialize on page load
+  setTimeout(function(){
+    window.jarvisSetupUser();
+  }, 700);
+
 })();
 </script>
 
