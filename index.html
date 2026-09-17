@@ -1222,6 +1222,26 @@ $("heard").innerText =
 
 jarvisLastReply = reply;
 
+try {
+  if ("speechSynthesis" in window) {
+    window.speechSynthesis.resume();
+  }
+
+  if (typeof window.jarvisSpeak === "function") {
+    window.jarvisSpeak(reply);
+  } else if ("speechSynthesis" in window) {
+    const u = new SpeechSynthesisUtterance(String(reply));
+    u.lang = "en-US";
+    u.rate = 0.88;
+    u.pitch = 0.72;
+    u.volume = 1;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(u);
+  }
+} catch (voiceError) {
+  console.log("JARVIS voice error:", voiceError);
+}
+
 
 return;
 
@@ -2563,7 +2583,7 @@ window.addEventListener(
 
 <script>
 (function () {
-  const mic = document.getElementById("jarvisFloatingMic");
+  const mic = (window.speechSynthesis && window.speechSynthesis.resume(), document.getElementById("jarvisFloatingMic"));
   if (!mic) return;
 
   let listening = false;
