@@ -2710,6 +2710,156 @@ window.addEventListener(
 })();
 </script>
 
+
+<style>
+#jarvisChatBox{
+  position:fixed;
+  left:50%;
+  bottom:24px;
+  transform:translateX(-50%);
+  width:min(92vw,700px);
+  display:flex;
+  gap:10px;
+  padding:10px;
+  background:rgba(0,10,15,.88);
+  border:1px solid #00eaff;
+  border-radius:14px;
+  box-shadow:0 0 20px rgba(0,234,255,.25);
+  backdrop-filter:blur(10px);
+  z-index:99999;
+}
+
+#jarvisChatInput{
+  flex:1;
+  min-width:0;
+  padding:13px 15px;
+  background:#050b0f;
+  color:#fff;
+  border:1px solid #00eaff;
+  border-radius:10px;
+  outline:none;
+  font:16px monospace;
+}
+
+#jarvisChatSend{
+  padding:0 20px;
+  background:#00eaff;
+  color:#001014;
+  border:0;
+  border-radius:10px;
+  font:bold 15px monospace;
+  cursor:pointer;
+}
+
+#jarvisChatSend:active{
+  transform:scale(.96);
+}
+
+#jarvisChatReply{
+  position:fixed;
+  left:50%;
+  bottom:88px;
+  transform:translateX(-50%);
+  width:min(90vw,650px);
+  max-height:180px;
+  overflow:auto;
+  padding:12px 15px;
+  display:none;
+  background:rgba(0,10,15,.92);
+  color:#00eaff;
+  border:1px solid #00eaff;
+  border-radius:12px;
+  font:14px monospace;
+  z-index:99998;
+}
+</style>
+
+<div id="jarvisChatReply"></div>
+
+<div id="jarvisChatBox">
+  <input
+    id="jarvisChatInput"
+    type="text"
+    placeholder="Talk to JARVIS..."
+    autocomplete="off"
+  />
+  <button id="jarvisChatSend">SEND</button>
+</div>
+
+<script>
+(function(){
+
+  const input = document.getElementById("jarvisChatInput");
+  const send = document.getElementById("jarvisChatSend");
+  const replyBox = document.getElementById("jarvisChatReply");
+
+  async function sendToJarvis(){
+
+    const command = input.value.trim();
+    if(!command) return;
+
+    send.disabled = true;
+    send.textContent = "...";
+
+    replyBox.style.display = "block";
+    replyBox.textContent = "JARVIS is thinking...";
+
+    try {
+
+      const response = await fetch("http://127.0.0.1:8081/ask", {
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json"
+        },
+        body:JSON.stringify({
+          command:command
+        })
+      });
+
+      const data = await response.json();
+
+      let reply = data.reply || "No response received.";
+
+      if(typeof window.jarvisPersonalizeReply === "function"){
+        reply = window.jarvisPersonalizeReply(reply);
+      }
+
+      replyBox.textContent = reply;
+
+      if(typeof window.jarvisSpeak === "function"){
+        try{
+          window.jarvisSpeak(reply);
+        }catch(e){
+          console.log("Voice error:", e);
+        }
+      }
+
+    } catch(error){
+
+      console.error(error);
+      replyBox.textContent =
+        "JARVIS backend connection failed. Is the server running on port 8081?";
+
+    } finally {
+
+      send.disabled = false;
+      send.textContent = "SEND";
+
+    }
+  }
+
+  send.addEventListener("click", sendToJarvis);
+
+  input.addEventListener("keydown", function(e){
+    if(e.key === "Enter"){
+      e.preventDefault();
+      sendToJarvis();
+    }
+  });
+
+})();
+</script>
+
 </body>
 </html>
 </body>
