@@ -2705,20 +2705,6 @@ window.addEventListener(
     return "";
   };
 
-  // First-use setup
-  window.jarvisSetupUser = function(){
-    let name = window.jarvisGetUserName();
-
-    if(!name){
-      name = prompt("Welcome to JARVIS. What should I call you?");
-      if(name){
-        window.jarvisSetUserName(name);
-      }
-    }
-
-    return window.jarvisGetUserName();
-  };
-
   // Personalize backend replies without allowing Rakib
   // to remain as a fixed default.
   window.jarvisPersonalizeReply = function(reply){
@@ -2731,11 +2717,6 @@ window.addEventListener(
 
     return text;
   };
-
-  // Initialize on page load
-  setTimeout(function(){
-    window.jarvisSetupUser();
-  }, 700);
 
 })();
 </script>
