@@ -2705,37 +2705,7 @@ window.addEventListener(
     return "";
   };
 
-  // First-use setup
-  window.jarvisSetupUser = function(){
-    let name = window.jarvisGetUserName();
 
-    if(!name){
-      name = prompt("Welcome to JARVIS. What should I call you?");
-      if(name){
-        window.jarvisSetUserName(name);
-      }
-    }
-
-    return window.jarvisGetUserName();
-  };
-
-  // Personalize backend replies without allowing Rakib
-  // to remain as a fixed default.
-  window.jarvisPersonalizeReply = function(reply){
-    let text = String(reply || "");
-    const name = window.jarvisGetUserName();
-
-    if(name){
-      text = text.replace(/\bRakib\b/gi, name);
-    }
-
-    return text;
-  };
-
-  // Initialize on page load
-  setTimeout(function(){
-    window.jarvisSetupUser();
-  }, 700);
 
 })();
 </script>
