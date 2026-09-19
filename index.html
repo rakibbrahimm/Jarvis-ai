@@ -2537,7 +2537,7 @@ window.addEventListener(
 </script>
 
 
-<button id="jarvisFloatingMic" type="button" aria-label="JARVIS Voice Input">
+<button id="jarvisFloatingMic" type="button" aria-label="RAKIB Voice Input">
   🎙️
 </button>
 
@@ -2779,7 +2779,7 @@ window.addEventListener(
   <input
     id="jarvisChatInput"
     type="text"
-    placeholder="Talk to JARVIS..."
+    placeholder="Talk to RAKIB..."
     autocomplete="off"
   />
   <button id="jarvisChatSend">SEND</button>
@@ -2801,7 +2801,7 @@ window.addEventListener(
     send.textContent = "...";
 
     replyBox.style.display = "block";
-    replyBox.textContent = "JARVIS is thinking...";
+    replyBox.textContent = "RAKIB is thinking...";
 
     try {
 
@@ -2856,6 +2856,53 @@ window.addEventListener(
     }
   });
 
+})();
+</script>
+
+
+<script id="RAKIB_NEW_USER_FLOW">
+(function(){
+  const KEY = "RAKIB_USER_NAME";
+
+  function getName(){
+    return localStorage.getItem(KEY) || "";
+  }
+
+  function setName(name){
+    name = String(name || "").trim()
+      .replace(/[.!?]+$/, "")
+      .trim();
+
+    if(name && name.length <= 40){
+      localStorage.setItem(KEY, name);
+      return name;
+    }
+    return "";
+  }
+
+  function rakibGreeting(command){
+    const text = String(command || "").trim();
+
+    if(!getName() &&
+       /^(hello|hi|hey|hello there|hi there)\s+rakib[.!?]*$/i.test(text)){
+      return "Hello. What is your name?";
+    }
+
+    const match = text.match(
+      /^(?:my name is|i am|i'm|call me)\s+(.+)$/i
+    );
+
+    if(!getName() && match){
+      const name = setName(match[1]);
+      if(name) return "Hello " + name + ".";
+    }
+
+    return "";
+  }
+
+  window.rakibGreeting = rakibGreeting;
+  window.rakibGetUserName = getName;
+  window.rakibSetUserName = setName;
 })();
 </script>
 
