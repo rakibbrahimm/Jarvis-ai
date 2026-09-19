@@ -956,11 +956,8 @@ text
 if(
 !("speechSynthesis" in window)
 ){
-
 return;
-
 }
-
 
 $("status").innerText =
 "SPEAKING...";
@@ -968,21 +965,36 @@ $("status").innerText =
 $("voiceState").innerText =
 "SPEAKING";
 
-
 speechSynthesis.cancel();
 
+const spokenText = String(text || "").trim();
+
+if(!spokenText){
+return;
+}
+
+/* =========================================
+   AUTOMATIC LANGUAGE DETECTION
+   Hindi Devanagari -> hi-IN
+   Everything else -> English
+   ========================================= */
+
+const hasHindi =
+/[\u0900-\u097F]/.test(spokenText);
+
+const targetLang =
+hasHindi ? "hi-IN" : "en-US";
 
 const utter =
 new SpeechSynthesisUtterance(
-text
+spokenText
 );
 
-
 utter.lang =
-"en-US";
+targetLang;
 
 utter.rate =
-.88;
+hasHindi ? .90 : .88;
 
 utter.pitch =
 .72;
@@ -990,27 +1002,64 @@ utter.pitch =
 utter.volume =
 1;
 
-
 const voices =
 speechSynthesis.getVoices();
 
+/* Prefer a real Hindi voice for Hindi text */
+let preferred;
 
-const preferred =
-voices.find(
-v =>
-/male|david|mark|daniel|alex|james/i
-.test(v.name)
-&&
-/en/i.test(v.lang)
+if(hasHindi){
+
+preferred =
+voices.find(v =>
+/^hi(-IN)?$/i.test(v.lang)
 );
 
+if(!preferred){
 
-if(
-preferred
-)
+preferred =
+voices.find(v =>
+/hi[-_]/i.test(v.lang)
+);
+}
+
+}else{
+
+/* Prefer English voice for English text */
+preferred =
+voices.find(v =>
+/male|david|mark|daniel|alex|james/i.test(v.name)
+&&
+/^(en)(-|$)/i.test(v.lang)
+);
+
+if(!preferred){
+
+preferred =
+voices.find(v =>
+/^en(-US)?$/i.test(v.lang)
+);
+}
+
+if(!preferred){
+
+preferred =
+voices.find(v =>
+/^en[-_]/i.test(v.lang)
+);
+}
+
+}
+
+if(preferred){
+
 utter.voice =
 preferred;
 
+utter.lang =
+preferred.lang;
+
+}
 
 utter.onend =
 function(){
@@ -1023,7 +1072,6 @@ $("voiceState").innerText =
 
 };
 
-
 utter.onerror =
 function(){
 
@@ -1034,7 +1082,6 @@ $("voiceState").innerText =
 "READY";
 
 };
-
 
 speechSynthesis.speak(
 utter
