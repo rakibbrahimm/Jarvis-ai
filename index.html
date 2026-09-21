@@ -384,6 +384,11 @@ button:active{
 }
 </style>
 
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#00eaff">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 </head>
 
 <body>
@@ -2945,28 +2950,658 @@ window.addEventListener(
 }
 </style>
 
+
+<script>
+/* RAKIB 10X UPGRADE PACK */
+/* =========================================================
+   RAKIB 10X UPGRADE PACK
+   1  Smart voice
+   2  Memory hooks
+   3  Chat history
+   4  Web/device commands
+   5  Gesture hooks
+   6  Online/local AI status
+   7  Hologram states
+   8  Voice activity effect
+   9  Multi-user profile
+   10 PWA support
+   ========================================================= */
+
+(function(){
+
+"use strict";
+
+if(window.__RAKIB_10X__) return;
+window.__RAKIB_10X__ = true;
+
+
+/* =========================================================
+   1. SMART VOICE
+   ========================================================= */
+
+window.rakibDetectLanguage = function(text){
+
+    text = String(text || "");
+
+    if(/[\u0900-\u097F]/.test(text)){
+        return "hi-IN";
+    }
+
+    return "en-US";
+};
+
+
+/* =========================================================
+   2. MEMORY HOOKS
+   ========================================================= */
+
+const MEMORY_KEY = "RAKIB_MEMORY_V1";
+
+window.rakibMemory = {
+
+    get(){
+        try{
+            return JSON.parse(
+                localStorage.getItem(MEMORY_KEY) || "{}"
+            );
+        }catch(e){
+            return {};
+        }
+    },
+
+    set(key,value){
+        const memory = this.get();
+        memory[key] = value;
+        localStorage.setItem(
+            MEMORY_KEY,
+            JSON.stringify(memory)
+        );
+    },
+
+    getValue(key){
+        return this.get()[key] || "";
+    },
+
+    clear(){
+        localStorage.removeItem(MEMORY_KEY);
+    }
+
+};
+
+
+/* =========================================================
+   3. CHAT HISTORY
+   ========================================================= */
+
+const HISTORY_KEY = "RAKIB_CHAT_HISTORY_V1";
+
+window.rakibHistory = {
+
+    get(){
+        try{
+            return JSON.parse(
+                localStorage.getItem(HISTORY_KEY) || "[]"
+            );
+        }catch(e){
+            return [];
+        }
+    },
+
+    add(role,text){
+
+        const history = this.get();
+
+        history.push({
+            role: String(role || "user"),
+            text: String(text || ""),
+            time: Date.now()
+        });
+
+        /* Keep last 100 messages */
+        while(history.length > 100){
+            history.shift();
+        }
+
+        localStorage.setItem(
+            HISTORY_KEY,
+            JSON.stringify(history)
+        );
+    },
+
+    clear(){
+        localStorage.removeItem(HISTORY_KEY);
+    }
+
+};
+
+
+/* =========================================================
+   4. BASIC WEB COMMANDS
+   ========================================================= */
+
+window.rakibCommand = function(command){
+
+    const text =
+        String(command || "")
+        .trim()
+        .toLowerCase();
+
+    if(!text) return false;
+
+    if(
+        text === "open youtube" ||
+        text === "youtube kholo"
+    ){
+        window.open(
+            "https://www.youtube.com/",
+            "_blank"
+        );
+        return true;
+    }
+
+    if(
+        text === "open google" ||
+        text === "google kholo"
+    ){
+        window.open(
+            "https://www.google.com/",
+            "_blank"
+        );
+        return true;
+    }
+
+    if(
+        text === "open github" ||
+        text === "github kholo"
+    ){
+        window.open(
+            "https://github.com/",
+            "_blank"
+        );
+        return true;
+    }
+
+    if(
+        text === "what is the time" ||
+        text === "time"
+    ){
+
+        const now = new Date();
+
+        const answer =
+            "The time is " +
+            now.toLocaleTimeString();
+
+        if(typeof window.jarvisSpeak === "function"){
+            window.jarvisSpeak(answer);
+        }
+
+        const reply =
+            document.getElementById("jarvisChatReply");
+
+        if(reply){
+            reply.innerText = answer;
+        }
+
+        return true;
+    }
+
+    return false;
+};
+
+
+/* =========================================================
+   5. GESTURE HOOKS
+   ========================================================= */
+
+window.rakibGesture = function(action){
+
+    action = String(action || "").toLowerCase();
+
+    document.documentElement.dataset.rakibGesture =
+        action;
+
+    if(action === "stop"){
+
+        if("speechSynthesis" in window){
+            speechSynthesis.cancel();
+        }
+
+        window.rakibSetState("READY");
+    }
+
+    if(action === "listen"){
+        window.rakibSetState("LISTENING");
+    }
+
+    if(action === "think"){
+        window.rakibSetState("THINKING");
+    }
+
+    if(action === "speak"){
+        window.rakibSetState("SPEAKING");
+    }
+};
+
+
+/* =========================================================
+   6. ONLINE / LOCAL AI STATUS
+   ========================================================= */
+
+window.rakibCheckBackend = async function(){
+
+    try{
+
+        const response = await fetch(
+            "http://127.0.0.1:8081/ask",
+            {
+                method:"POST",
+                headers:{
+                    "Content-Type":"application/json"
+                },
+                body:JSON.stringify({
+                    command:"ping"
+                })
+            }
+        );
+
+        if(response.ok){
+
+            document.documentElement.dataset.ai =
+                "online";
+
+            return true;
+        }
+
+    }catch(e){}
+
+    document.documentElement.dataset.ai =
+        "offline";
+
+    return false;
+};
+
+
+/* =========================================================
+   7. HOLOGRAM STATE
+   ========================================================= */
+
+window.rakibSetState = function(state){
+
+    state = String(state || "READY")
+        .toUpperCase();
+
+    document.documentElement.dataset.rakibState =
+        state;
+
+    const status =
+        document.getElementById("status");
+
+    const voice =
+        document.getElementById("voiceState");
+
+    if(state === "LISTENING"){
+
+        if(status)
+            status.innerText = "LISTENING...";
+
+        if(voice)
+            voice.innerText = "LISTENING";
+
+    }
+
+    else if(state === "THINKING"){
+
+        if(status)
+            status.innerText = "THINKING...";
+
+        if(voice)
+            voice.innerText = "THINKING";
+
+    }
+
+    else if(state === "SPEAKING"){
+
+        if(status)
+            status.innerText = "SPEAKING...";
+
+        if(voice)
+            voice.innerText = "SPEAKING";
+
+    }
+
+    else{
+
+        if(status)
+            status.innerText = "SYSTEM ONLINE";
+
+        if(voice)
+            voice.innerText = "READY";
+
+    }
+
+};
+
+
+/* =========================================================
+   8. VOICE ACTIVITY EFFECT
+   ========================================================= */
+
+window.rakibVoiceEffect = function(active){
+
+    document.documentElement.dataset.voice =
+        active ? "active" : "idle";
+};
+
+
+/* =========================================================
+   9. MULTI USER PROFILE
+   ========================================================= */
+
+window.rakibProfile = {
+
+    getName(){
+
+        return (
+            localStorage.getItem(
+                "JARVIS_USER_NAME"
+            ) || ""
+        );
+
+    },
+
+    setName(name){
+
+        name =
+            String(name || "")
+            .trim();
+
+        if(!name) return;
+
+        localStorage.setItem(
+            "JARVIS_USER_NAME",
+            name
+        );
+
+        this.render();
+
+    },
+
+    clear(){
+
+        localStorage.removeItem(
+            "JARVIS_USER_NAME"
+        );
+
+        this.render();
+
+    },
+
+    render(){
+
+        const name = this.getName();
+
+        document.documentElement.dataset.user =
+            name || "guest";
+
+    }
+
+};
+
+
+/* =========================================================
+   10. WAKE WORD / VOICE COMMAND SYSTEM
+   ========================================================= */
+
+let recognition = null;
+let listening = false;
+
+window.rakibVoiceControl = {
+
+    start(){
+
+        const SpeechRecognition =
+            window.SpeechRecognition ||
+            window.webkitSpeechRecognition;
+
+        if(!SpeechRecognition){
+
+            alert(
+                "Voice recognition is not supported by this browser."
+            );
+
+            return;
+        }
+
+        if(listening) return;
+
+        recognition =
+            new SpeechRecognition();
+
+        recognition.lang = "en-IN";
+
+        recognition.continuous = true;
+
+        recognition.interimResults = false;
+
+        recognition.onstart = function(){
+
+            listening = true;
+
+            window.rakibSetState(
+                "LISTENING"
+            );
+
+        };
+
+        recognition.onresult =
+        function(event){
+
+            const result =
+                event.results[
+                    event.results.length - 1
+                ][0].transcript.trim();
+
+            const lower =
+                result.toLowerCase();
+
+            /*
+              Wake word:
+              "hey rakib"
+              "rakib"
+            */
+
+            if(
+                lower.includes("hey rakib") ||
+                lower.startsWith("rakib")
+            ){
+
+                const command =
+                    result
+                    .replace(
+                        /^hey\s+rakib[\s,]*/i,
+                        ""
+                    )
+                    .replace(
+                        /^rakib[\s,]*/i,
+                        ""
+                    )
+                    .trim();
+
+                if(command){
+
+                    window.rakibProcessVoice(
+                        command
+                    );
+
+                }
+
+            }
+
+        };
+
+        recognition.onerror =
+        function(){
+
+            listening = false;
+
+            window.rakibSetState(
+                "READY"
+            );
+
+        };
+
+        recognition.onend =
+        function(){
+
+            listening = false;
+
+            window.rakibSetState(
+                "READY"
+            );
+
+        };
+
+        recognition.start();
+
+    },
+
+    stop(){
+
+        if(recognition){
+
+            recognition.stop();
+
+            recognition = null;
+
+        }
+
+        listening = false;
+
+        window.rakibSetState(
+            "READY"
+        );
+
+    }
+
+};
+
+
+/* =========================================================
+   VOICE COMMAND PROCESSOR
+   ========================================================= */
+
+window.rakibProcessVoice =
+async function(command){
+
+    if(!command) return;
+
+    window.rakibHistory.add(
+        "user",
+        command
+    );
+
+    if(
+        window.rakibCommand(command)
+    ){
+        return;
+    }
+
+    const input =
+        document.getElementById(
+            "jarvisChatInput"
+        );
+
+    const send =
+        document.getElementById(
+            "jarvisChatSend"
+        );
+
+    if(input){
+
+        input.value = command;
+
+        if(send){
+            send.click();
+        }
+
+    }
+
+};
+
+
+/* =========================================================
+   WRAP EXISTING SPEECH FUNCTION
+   ========================================================= */
+
+if(typeof window.jarvisSpeak === "function"){
+
+    const originalSpeak =
+        window.jarvisSpeak;
+
+    window.jarvisSpeak =
+    function(text){
+
+        window.rakibSetState(
+            "SPEAKING"
+        );
+
+        window.rakibVoiceEffect(
+            true
+        );
+
+        window.rakibHistory.add(
+            "assistant",
+            text
+        );
+
+        originalSpeak(text);
+
+        setTimeout(
+            function(){
+
+                window.rakibVoiceEffect(
+                    false
+                );
+
+            },
+            Math.max(
+                1500,
+                String(text || "").length * 55
+            )
+        );
+
+    };
+
+}
+
+
+/* =========================================================
+   INITIALIZE
+   ========================================================= */
+
+window.rakibProfile.render();
+
+window.rakibCheckBackend();
+
+console.log(
+    "RAKIB 10X UPGRADE PACK ONLINE"
+);
+
+})();
+
+</script>
+
+
+<script>
+if("serviceWorker" in navigator){
+    window.addEventListener("load", function(){
+        navigator.serviceWorker.register("./sw.js")
+        .catch(function(e){
+            console.log("RAKIB SW:", e);
+        });
+    });
+}
+</script>
 </body>
 </html>
-</body>
-</html>
-
-<style id="JARVIS_CLEANUP">
-#commandBar,
-#command-bar,
-#jarvisCommandBar,
-.command-bar,
-#jarvisSpeakButton,
-#speakBtn,
-#speakButton,
-.speak-btn,
-.speak-button {
-    display:none !important;
-}
-</style>
-
-<style id="JARVIS_REMOVE_CHAT_SPEAK">
-#jarvisCommandBar,
-#jarvisSpeakButton {
-    display:none !important;
-}
-</style>
