@@ -3603,5 +3603,361 @@ if("serviceWorker" in navigator){
     });
 }
 </script>
+
+<!-- RAKIB_AUDIO_FIX_V2 -->
+<script id="RAKIB_AUDIO_FIX_V2">
+(function(){
+
+"use strict";
+
+if(window.__RAKIB_AUDIO_FIX_V2__) return;
+window.__RAKIB_AUDIO_FIX_V2__ = true;
+
+
+/* ==============================
+   SPEAKER FIX
+============================== */
+
+window.rakibSpeakReliable = function(text){
+
+    text = String(text || "").trim();
+    if(!text) return;
+
+    if(!("speechSynthesis" in window)){
+        console.log("RAKIB: speechSynthesis unavailable");
+        return;
+    }
+
+    try{
+        speechSynthesis.cancel();
+    }catch(e){}
+
+    const speakNow = function(){
+
+        const utter = new SpeechSynthesisUtterance(text);
+
+        const voices = speechSynthesis.getVoices() || [];
+
+        const hasHindi =
+            /[\u0900-\u097F]/.test(text);
+
+        let voice = null;
+
+        if(hasHindi){
+            voice =
+                voices.find(v => /^hi-IN$/i.test(v.lang)) ||
+                voices.find(v => /^hi-/i.test(v.lang));
+        }
+
+        if(!voice){
+            voice =
+                voices.find(v => /^en-IN$/i.test(v.lang)) ||
+                voices.find(v => /^en-US$/i.test(v.lang)) ||
+                voices.find(v => /^en-/i.test(v.lang));
+        }
+
+        if(voice){
+            utter.voice = voice;
+            utter.lang = voice.lang;
+        }else{
+            utter.lang = hasHindi ? "hi-IN" : "en-IN";
+        }
+
+        utter.rate = .90;
+        utter.pitch = .78;
+        utter.volume = 1;
+
+        utter.onstart = function(){
+            const status = document.getElementById("status");
+            const voiceState = document.getElementById("voiceState");
+
+            if(status) status.innerText = "SPEAKING...";
+            if(voiceState) voiceState.innerText = "SPEAKING";
+        };
+
+        utter.onend = function(){
+            const status = document.getElementById("status");
+            const voiceState = document.getElementById("voiceState");
+
+            if(status) status.innerText = "READY";
+            if(voiceState) voiceState.innerText = "READY";
+        };
+
+        utter.onerror = function(e){
+            console.log("RAKIB TTS ERROR:", e.error);
+
+            const status = document.getElementById("status");
+            const voiceState = document.getElementById("voiceState");
+
+            if(status) status.innerText = "READY";
+            if(voiceState) voiceState.innerText = "READY";
+        };
+
+        speechSynthesis.speak(utter);
+    };
+
+    /*
+       Android Chrome sometimes returns an empty voice list
+       until voiceschanged fires.
+    */
+    const voices = speechSynthesis.getVoices();
+
+    if(voices && voices.length){
+        speakNow();
+    }else{
+        speechSynthesis.addEventListener(
+            "voiceschanged",
+            function once(){
+                speechSynthesis.removeEventListener(
+                    "voiceschanged",
+                    once
+                );
+                speakNow();
+            }
+        );
+
+        setTimeout(speakNow, 500);
+    }
+};
+
+
+/* Replace existing speak function once */
+
+if(typeof window.jarvisSpeak === "function"){
+
+    window.jarvisSpeak = window.rakibSpeakReliable;
+
+}else{
+
+    window.jarvisSpeak = window.rakibSpeakReliable;
+}
+
+
+/* ==============================
+   MICROPHONE FIX
+============================== */
+
+const SpeechRecognition =
+    window.SpeechRecognition ||
+    window.webkitSpeechRecognition;
+
+let recognition = null;
+let listening = false;
+
+if(SpeechRecognition){
+
+    recognition = new SpeechRecognition();
+
+    recognition.lang = "en-IN";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = function(){
+
+        listening = true;
+
+        const status = document.getElementById("status");
+        const voiceState = document.getElementById("voiceState");
+
+        if(status) status.innerText = "LISTENING...";
+        if(voiceState) voiceState.innerText = "LISTENING";
+
+        console.log("RAKIB MIC: listening");
+    };
+
+    recognition.onresult = function(event){
+
+        const result =
+            event.results &&
+            event.results[0] &&
+            event.results[0][0];
+
+        if(!result) return;
+
+        const text =
+            String(result.transcript || "").trim();
+
+        console.log("RAKIB MIC INPUT:", text);
+
+        if(!text) return;
+
+        const input =
+            document.getElementById("jarvisChatInput");
+
+        if(input){
+
+            input.value = text;
+
+            input.dispatchEvent(
+                new Event("input", {
+                    bubbles:true
+                })
+            );
+
+            const send =
+                document.getElementById("jarvisChatSend");
+
+            if(send){
+                setTimeout(function(){
+                    send.click();
+                }, 150);
+            }
+        }
+    };
+
+    recognition.onerror = function(event){
+
+        console.log(
+            "RAKIB MIC ERROR:",
+            event.error
+        );
+
+        listening = false;
+
+        const status = document.getElementById("status");
+        const voiceState = document.getElementById("voiceState");
+
+        if(status) status.innerText = "READY";
+        if(voiceState) voiceState.innerText = "READY";
+    };
+
+    recognition.onend = function(){
+
+        listening = false;
+
+        const status = document.getElementById("status");
+        const voiceState = document.getElementById("voiceState");
+
+        if(status) status.innerText = "READY";
+        if(voiceState) voiceState.innerText = "READY";
+    };
+
+}else{
+
+    console.log(
+        "RAKIB MIC: SpeechRecognition unavailable"
+    );
+}
+
+
+/* ==============================
+   FLOATING MIC BUTTON
+============================== */
+
+function bindRakibMic(){
+
+    const mic =
+        document.getElementById("jarvisFloatingMic");
+
+    if(!mic){
+        console.log(
+            "RAKIB MIC: #jarvisFloatingMic not found"
+        );
+        return;
+    }
+
+    if(mic.dataset.rakibAudioBound === "1"){
+        return;
+    }
+
+    mic.dataset.rakibAudioBound = "1";
+
+    mic.addEventListener(
+        "click",
+        function(event){
+
+            event.preventDefault();
+            event.stopPropagation();
+
+            if(!recognition){
+
+                alert(
+                    "Microphone speech input is not supported by this browser."
+                );
+
+                return;
+            }
+
+            if(listening){
+
+                try{
+                    recognition.stop();
+                }catch(e){}
+
+                return;
+            }
+
+            try{
+
+                /*
+                   Stop any older RAKIB recognition first.
+                */
+                if(
+                    window.rakibVoiceControl &&
+                    typeof window.rakibVoiceControl.stop === "function"
+                ){
+                    try{
+                        window.rakibVoiceControl.stop();
+                    }catch(e){}
+                }
+
+                recognition.start();
+
+            }catch(error){
+
+                console.log(
+                    "RAKIB MIC START ERROR:",
+                    error
+                );
+
+            }
+
+        },
+        true
+    );
+
+    console.log("RAKIB MIC: button connected");
+}
+
+
+/* Bind now + after page load */
+
+if(document.readyState === "loading"){
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        bindRakibMic
+    );
+
+}else{
+
+    bindRakibMic();
+}
+
+window.addEventListener(
+    "load",
+    bindRakibMic
+);
+
+
+/* Allow browser to initialise voices */
+
+if("speechSynthesis" in window){
+    speechSynthesis.getVoices();
+
+    if("onvoiceschanged" in speechSynthesis){
+        speechSynthesis.onvoiceschanged =
+            function(){
+                speechSynthesis.getVoices();
+            };
+    }
+}
+
+console.log("RAKIB AUDIO FIX V2 ONLINE");
+
+})();
+</script>
+
 </body>
 </html>
