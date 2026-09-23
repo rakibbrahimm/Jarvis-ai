@@ -1,10 +1,10 @@
 import os
 import json
-import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from rakib_core.router import RAKIBRouter
 from rakib_core.tools import run_tools
+from rakib_core.answer_engine import improve_answer
 
 
 HOST = "127.0.0.1"
@@ -17,7 +17,7 @@ router = RAKIBRouter()
 # ============================================================
 
 CONTEXT = []
-MAX_CONTEXT = 12
+MAX_CONTEXT = 16
 
 
 def remember(role, content):
@@ -31,13 +31,13 @@ def remember(role, content):
 
 
 def build_prompt(command):
-    if not CONTEXT:
-        return command
-
     lines = [
         "You are RAKIB, a helpful general-purpose AI assistant.",
-        "Use the conversation context when it is relevant.",
-        "Answer clearly and directly.",
+        "Understand the user's request before answering.",
+        "Use conversation context when relevant.",
+        "Do not invent facts.",
+        "If information is uncertain, say so.",
+        "Give a direct, useful answer.",
         "",
         "Conversation context:",
     ]
@@ -69,8 +69,6 @@ def openai_provider(command):
     try:
         import requests
 
-        prompt = build_prompt(command)
-
         response = requests.post(
             "https://api.openai.com/v1/responses",
             headers={
@@ -80,19 +78,16 @@ def openai_provider(command):
             json={
                 "model": os.getenv(
                     "RAKIB_OPENAI_MODEL",
-                    "gpt-5-mini"
+                    "gpt-5-mini",
                 ),
-                "input": prompt,
-                "max_output_tokens": 700,
+                "input": build_prompt(command),
+                "max_output_tokens": 900,
             },
             timeout=30,
         )
 
         if response.status_code != 200:
-            print(
-                "OpenAI:",
-                response.status_code
-            )
+            print("OpenAI:", response.status_code)
             return None
 
         data = response.json()
@@ -133,7 +128,7 @@ def gemini_provider(command):
 
         model = os.getenv(
             "RAKIB_GEMINI_MODEL",
-            "gemini-2.5-flash"
+            "gemini-2.5-flash",
         )
 
         url = (
@@ -143,40 +138,30 @@ def gemini_provider(command):
             + ":generateContent"
         )
 
-        prompt = build_prompt(command)
-
         response = requests.post(
             url,
             params={"key": key},
             json={
-                "contents": [
-                    {
-                        "parts": [
-                            {"text": prompt}
-                        ]
-                    }
-                ]
+                "contents": [{
+                    "parts": [{
+                        "text": build_prompt(command)
+                    }]
+                }]
             },
             timeout=30,
         )
 
         if response.status_code != 200:
-            print(
-                "Gemini:",
-                response.status_code
-            )
+            print("Gemini:", response.status_code)
             return None
 
         data = response.json()
 
-        for candidate in data.get(
-            "candidates",
-            []
-        ):
+        for candidate in data.get("candidates", []):
             for part in candidate.get(
-                "content",
-                {}
+                "content", {}
             ).get("parts", []):
+
                 text = part.get("text")
 
                 if isinstance(text, str) and text.strip():
@@ -201,8 +186,6 @@ def perplexity_provider(command):
     try:
         import requests
 
-        prompt = build_prompt(command)
-
         response = requests.post(
             "https://api.perplexity.ai/chat/completions",
             headers={
@@ -212,15 +195,13 @@ def perplexity_provider(command):
             json={
                 "model": os.getenv(
                     "RAKIB_PERPLEXITY_MODEL",
-                    "sonar"
+                    "sonar",
                 ),
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": prompt,
-                    }
-                ],
-                "max_tokens": 700,
+                "messages": [{
+                    "role": "user",
+                    "content": build_prompt(command),
+                }],
+                "max_tokens": 900,
             },
             timeout=30,
         )
@@ -228,36 +209,29 @@ def perplexity_provider(command):
         if response.status_code != 200:
             print(
                 "Perplexity:",
-                response.status_code
+                response.status_code,
             )
             return None
 
         data = response.json()
-
         choices = data.get("choices", [])
 
         if choices:
-            message = choices[0].get(
-                "message",
-                {}
-            )
-
-            text = message.get("content")
+            text = choices[0].get(
+                "message", {}
+            ).get("content")
 
             if isinstance(text, str) and text.strip():
                 return text.strip()
 
     except Exception as error:
-        print(
-            "Perplexity ERROR:",
-            error
-        )
+        print("Perplexity ERROR:", error)
 
     return None
 
 
 # ============================================================
-# LOCAL INTELLIGENCE
+# LOCAL CORE + ANSWER ENGINE
 # ============================================================
 
 def local_core(command):
@@ -266,60 +240,83 @@ def local_core(command):
     if not c:
         return "Tell me what you need."
 
-    greetings = {
+    if c in {
         "hi",
         "hello",
         "hey",
         "hlo",
         "salam",
         "assalamualaikum",
-    }
+    }:
+        return "Hello! I am RAKIB 2.4. How can I help you?"
 
-    if c in greetings:
-        return (
-            "Hello! I am RAKIB 2.3. "
-            "How can I help you?"
-        )
+    # Memory gets priority for direct memory questions.
+    memory_answer, memory_provider = improve_answer(
+        command,
+        None,
+        CONTEXT,
+    )
 
-    tool_result, tool_name = run_tools(command)
+    if memory_answer:
+        return memory_answer
+
+    # Deterministic tools + web research.
+    tool_result, tool_provider = run_tools(command)
 
     if tool_result:
+        # Turn raw web/Wikipedia output into an answer.
+        if tool_provider == "rakib-web":
+            answer, provider = improve_answer(
+                command,
+                tool_result,
+                CONTEXT,
+            )
+
+            if answer:
+                return answer
+
         return tool_result
 
-    return None
+    # Last local fallback.
+    return (
+        "I don't currently have a connected AI model "
+        "that can reason through this question. "
+        "Connect a working AI provider for full "
+        "general-purpose reasoning."
+    )
 
 
 # ============================================================
-# PROVIDER REGISTRATION
+# PROVIDERS
 # ============================================================
 
 router.register(
     "openai",
     openai_provider,
-    priority=10
+    priority=10,
 )
 
 router.register(
     "gemini",
     gemini_provider,
-    priority=20
+    priority=20,
 )
 
 router.register(
     "perplexity",
     perplexity_provider,
-    priority=30
+    priority=30,
 )
 
 router.register(
     "rakib-core",
     local_core,
-    priority=1000
+    priority=1000,
 )
 
 
 # ============================================================
-# HTTP SERVER
+# HTTP
 # ============================================================
 
 class Handler(BaseHTTPRequestHandler):
@@ -327,24 +324,24 @@ class Handler(BaseHTTPRequestHandler):
     def _send_json(self, payload, status=200):
         body = json.dumps(
             payload,
-            ensure_ascii=False
+            ensure_ascii=False,
         ).encode("utf-8")
 
         self.send_response(status)
 
         self.send_header(
             "Content-Type",
-            "application/json; charset=utf-8"
+            "application/json; charset=utf-8",
         )
 
         self.send_header(
             "Content-Length",
-            str(len(body))
+            str(len(body)),
         )
 
         self.send_header(
             "Access-Control-Allow-Origin",
-            "*"
+            "*",
         )
 
         self.end_headers()
@@ -356,17 +353,17 @@ class Handler(BaseHTTPRequestHandler):
 
         self.send_header(
             "Access-Control-Allow-Origin",
-            "*"
+            "*",
         )
 
         self.send_header(
             "Access-Control-Allow-Methods",
-            "POST, OPTIONS, GET"
+            "POST, OPTIONS, GET",
         )
 
         self.send_header(
             "Access-Control-Allow-Headers",
-            "Content-Type"
+            "Content-Type",
         )
 
         self.end_headers()
@@ -376,7 +373,7 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json({
                 "status": "online",
                 "assistant": "RAKIB",
-                "brain": "RAKIB 2.3",
+                "brain": "RAKIB 2.4",
                 "context_messages": len(CONTEXT),
             })
             return
@@ -384,14 +381,14 @@ class Handler(BaseHTTPRequestHandler):
         self._send_json({
             "status": "online",
             "assistant": "RAKIB",
-            "brain": "RAKIB 2.3",
+            "brain": "RAKIB 2.4",
         })
 
     def do_POST(self):
         if self.path != "/ask":
             self._send_json({
                 "status": "error",
-                "message": "Use POST /ask",
+                "reply": "Use POST /ask",
             }, 404)
             return
 
@@ -399,7 +396,7 @@ class Handler(BaseHTTPRequestHandler):
             length = int(
                 self.headers.get(
                     "Content-Length",
-                    "0"
+                    "0",
                 )
             )
 
@@ -419,36 +416,55 @@ class Handler(BaseHTTPRequestHandler):
                     "reply": "Tell me what you need.",
                     "provider": "rakib-core",
                     "assistant": "RAKIB",
-                    "brain": "RAKIB 2.3",
+                    "brain": "RAKIB 2.4",
                 }, 400)
                 return
 
-            remember(
-                "user",
-                command
-            )
+            remember("user", command)
 
-            reply, provider = router.ask(
-                command
-            )
+            reply, provider = router.ask(command)
 
             if not reply:
                 reply = (
-                    "I couldn't find a reliable answer "
+                    "I couldn't produce a reliable answer "
                     "with the currently available systems."
                 )
 
-            remember(
-                "assistant",
-                reply
-            )
+            # Detect local web/memory answer providers.
+            if provider == "rakib-core":
+                lower = reply.lower()
+
+                if (
+                    lower.startswith(
+                        "based on the available information:"
+                    )
+                ):
+                    provider = "rakib-answer-engine"
+
+                elif lower.startswith(
+                    "your name is"
+                ):
+                    provider = "rakib-memory"
+
+                elif lower.startswith(
+                    "result:"
+                ):
+                    provider = "rakib-tools"
+
+                elif (
+                    "current local time:" in lower
+                    or "today's date:" in lower
+                ):
+                    provider = "rakib-tools"
+
+            remember("assistant", reply)
 
             self._send_json({
                 "status": "success",
                 "reply": reply,
                 "provider": provider,
                 "assistant": "RAKIB",
-                "brain": "RAKIB 2.3",
+                "brain": "RAKIB 2.4",
                 "context_messages": len(CONTEXT),
             })
 
@@ -460,38 +476,37 @@ class Handler(BaseHTTPRequestHandler):
                 "reply": "RAKIB encountered an internal error.",
                 "provider": "rakib-core",
                 "assistant": "RAKIB",
-                "brain": "RAKIB 2.3",
+                "brain": "RAKIB 2.4",
             }, 500)
 
     def log_message(self, format, *args):
         return
 
 
-# ============================================================
-# START
-# ============================================================
-
 if __name__ == "__main__":
     print("==============================================")
-    print("       RAKIB 2.3 ONLINE")
-    print("       GENERAL INTELLIGENCE CORE")
+    print("       RAKIB 2.4 ONLINE")
+    print("       ALL-QUESTION ANSWER ENGINE")
     print("==============================================")
     print("http://127.0.0.1:8082/ask")
     print("")
     print("AI:      OpenAI / Gemini / Perplexity")
-    print("WEB:     DuckDuckGo + Wikipedia")
-    print("TOOLS:   Calculator / Time / Date / Units")
+    print("WEB:     Wikipedia + DuckDuckGo")
+    print("TOOLS:   Math / Time / Date / Units")
     print("MEMORY:  Conversation context")
+    print("ANSWER:  Retrieval + Answer Engine")
     print("==============================================")
 
     server = ThreadingHTTPServer(
         (HOST, PORT),
-        Handler
+        Handler,
     )
 
     try:
         server.serve_forever()
+
     except KeyboardInterrupt:
         print("\nRAKIB stopped.")
+
     finally:
         server.server_close()
