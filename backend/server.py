@@ -213,7 +213,7 @@ def special_command(command):
             "JARVIS diagnostics complete. "
             "Backend online. "
             "Memory online. "
-            "Local AI fallback disabled. "
+            "Local AI fallback is disabled; using online AI. "
             + (
                 "Online AI configured."
                 if online
@@ -764,7 +764,6 @@ print(
 )
 print(
     " Model:",
-    MODEL_FILE
 )
 print(
     " Running on:"
