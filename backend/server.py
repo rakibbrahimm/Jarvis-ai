@@ -89,7 +89,11 @@ def openai_provider(command):
         )
 
         if response.status_code != 200:
-            print("OpenAI:", response.status_code)
+            try:
+                detail = response.json().get("error", {}).get("message", "")
+            except Exception:
+                detail = response.text[:300]
+            print(f"OpenAI ERROR {response.status_code}: {detail}")
             return None
 
         data = response.json()

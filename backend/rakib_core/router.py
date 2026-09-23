@@ -92,13 +92,15 @@ class RAKIBRouter:
         # Never pretend an AI provider answered when it didn't.
         if errors:
             return (
-                "I'm online, but the available AI providers could not "
-                "answer this request. Local tools and web fallback are "
-                "available.",
-                "rakib-core",
+                "RAKIB is online, but no connected AI provider returned "
+                "an answer. Check the provider configuration or API "
+                "availability. Local tools and web fallback remain available.",
+                "provider-unavailable",
             )
 
         return (
-            "I'm online, but no response was produced for this request.",
-            "rakib-core",
+            "RAKIB is online, but no AI provider is currently available "
+            "for general-purpose reasoning. Local tools and web fallback "
+            "are still available.",
+            "provider-unavailable",
         )
