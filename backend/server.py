@@ -664,7 +664,7 @@ def jarvis_core(command, attachment=None):
         "using TinyLlama fallback"
     )
 
-    local_reply = ask_local_ai(command)
+    local_reply = None
 
     remember_conversation(
         command,
@@ -870,7 +870,7 @@ class JarvisHandler(BaseHTTPRequestHandler):
                 "online_ai":
                     bool(OPENAI_API_KEY),
 
-                "local_ai": True,
+                "local_ai": False,
 
                 "context_messages":
                     len(conversation)
