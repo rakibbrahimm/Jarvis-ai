@@ -4,7 +4,19 @@ import re
 def detect_intent(command):
     q = command.lower().strip()
 
+    # Direct arithmetic
     if re.fullmatch(r"[0-9+\-*/().% \t]+", q):
+        return "math"
+
+    # Natural-language arithmetic
+    math_patterns = [
+        r"\bwhat is\s+\d+(?:\s+(?:plus|minus|times|multiplied by|divided by)\s+\d+)+\b",
+        r"\bcalculate\s+.+",
+        r"\bsolve\s+.+",
+        r"\b\d+\s+(?:plus|minus|times|multiplied by|divided by)\s+\d+\b",
+    ]
+
+    if any(re.search(pattern, q) for pattern in math_patterns):
         return "math"
 
     if re.search(r"\b(what time|current time|time now)\b", q):
