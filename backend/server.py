@@ -510,7 +510,16 @@ def jarvis_core(command, attachment=None):
     # ONLINE AI FIRST
     # -----------------------------------------------------
 
-    online_reply = ask_online_ai(command)
+    routed = rakib_router.ask(
+        command,
+        preferred="gpt"
+    )
+
+    online_reply = (
+        routed.text
+        if routed.success
+        else None
+    )
 
     if online_reply:
 
