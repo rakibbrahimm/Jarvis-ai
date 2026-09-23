@@ -4918,5 +4918,139 @@ if(
 })();
 </script>
 
+
+
+<!-- RAKIB CHAT FETCH REPAIR V1 -->
+<script>
+(function(){
+
+"use strict";
+
+if(window.__RAKIB_CHAT_FETCH_REPAIR__) return;
+window.__RAKIB_CHAT_FETCH_REPAIR__ = true;
+
+const API = "http://127.0.0.1:8081/ask";
+
+function replyBox(){
+    return document.getElementById("jarvisChatReply");
+}
+
+function heardBox(){
+    return document.getElementById("heard");
+}
+
+function show(text){
+    text = String(text || "");
+
+    const box = replyBox();
+    if(box){
+        box.style.display = "block";
+        box.textContent = text;
+    }
+
+    const heard = heardBox();
+    if(heard){
+        heard.textContent = "RAKIB: " + text;
+    }
+}
+
+async function send(command){
+
+    command = String(command || "").trim();
+
+    if(!command) return;
+
+    show("RAKIB is thinking...");
+
+    const controller = new AbortController();
+
+    const timeout = setTimeout(function(){
+        controller.abort();
+    },30000);
+
+    try{
+
+        const response = await fetch(API,{
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json"
+            },
+            body:JSON.stringify({
+                command:command
+            }),
+            signal:controller.signal
+        });
+
+        clearTimeout(timeout);
+
+        const raw = await response.text();
+
+        console.log("RAKIB HTTP:",response.status);
+        console.log("RAKIB RAW:",raw);
+
+        if(!response.ok){
+            throw new Error(
+                "Backend HTTP " + response.status +
+                ": " + raw.slice(0,200)
+            );
+        }
+
+        let data;
+
+        try{
+            data = JSON.parse(raw);
+        }catch(e){
+            throw new Error(
+                "Backend returned invalid JSON: " +
+                raw.slice(0,200)
+            );
+        }
+
+        const reply =
+            data.reply ||
+            data.response ||
+            data.message ||
+            "Backend returned no reply.";
+
+        show(reply);
+
+        if(typeof window.rakibFinalSpeak === "function"){
+            window.rakibFinalSpeak(reply);
+        }else if(typeof window.jarvisSpeak === "function"){
+            window.jarvisSpeak(reply);
+        }
+
+    }catch(error){
+
+        clearTimeout(timeout);
+
+        console.error(
+            "RAKIB CHAT ERROR:",
+            error
+        );
+
+        let msg;
+
+        if(error.name === "AbortError"){
+            msg = "RAKIB backend timed out.";
+        }else{
+            msg =
+                "RAKIB connection error: " +
+                error.message;
+        }
+
+        show(msg);
+    }
+}
+
+window.rakibDirectSend = send;
+
+console.log(
+    "RAKIB CHAT FETCH REPAIR ONLINE"
+);
+
+})();
+</script>
+
 </body>
 </html>
