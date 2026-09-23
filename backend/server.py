@@ -5,6 +5,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from rakib_core.router import RAKIBRouter
 from rakib_core.tools import run_tools
 from rakib_core.answer_engine import improve_answer
+from rakib_core.intent import detect_intent
+from rakib_core.diagnostics import diagnostics
 
 
 HOST = "127.0.0.1"
@@ -373,7 +375,8 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json({
                 "status": "online",
                 "assistant": "RAKIB",
-                "brain": "RAKIB 2.4",
+                "brain": "RAKIB 3.0",
+            "intent": detect_intent(command),
                 "context_messages": len(CONTEXT),
             })
             return
@@ -381,8 +384,18 @@ class Handler(BaseHTTPRequestHandler):
         self._send_json({
             "status": "online",
             "assistant": "RAKIB",
-            "brain": "RAKIB 2.4",
+            "brain": "RAKIB 3.0",
+            "intent": detect_intent(command),
         })
+
+
+    if self.path == "/diagnostics":
+        payload = diagnostics()
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(json.dumps(payload).encode())
+        return
 
     def do_POST(self):
         if self.path != "/ask":
@@ -416,7 +429,8 @@ class Handler(BaseHTTPRequestHandler):
                     "reply": "Tell me what you need.",
                     "provider": "rakib-core",
                     "assistant": "RAKIB",
-                    "brain": "RAKIB 2.4",
+                    "brain": "RAKIB 3.0",
+            "intent": detect_intent(command),
                 }, 400)
                 return
 
@@ -464,7 +478,8 @@ class Handler(BaseHTTPRequestHandler):
                 "reply": reply,
                 "provider": provider,
                 "assistant": "RAKIB",
-                "brain": "RAKIB 2.4",
+                "brain": "RAKIB 3.0",
+            "intent": detect_intent(command),
                 "context_messages": len(CONTEXT),
             })
 
@@ -476,7 +491,8 @@ class Handler(BaseHTTPRequestHandler):
                 "reply": "RAKIB encountered an internal error.",
                 "provider": "rakib-core",
                 "assistant": "RAKIB",
-                "brain": "RAKIB 2.4",
+                "brain": "RAKIB 3.0",
+            "intent": detect_intent(command),
             }, 500)
 
     def log_message(self, format, *args):
