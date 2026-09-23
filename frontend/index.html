@@ -1,170 +1,577 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>RAKIB 2.0</title>
+<meta name="viewport"
+      content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+
+<title>R.A.K.I.B 3.0</title>
 
 <style>
-*{box-sizing:border-box}
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+    -webkit-tap-highlight-color:transparent;
+}
+
+html,body{
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#02050b;
+    color:#dffcff;
+    font-family:Arial,Helvetica,sans-serif;
+}
 
 body{
-margin:0;
-height:100vh;
-overflow:hidden;
-font-family:Arial,sans-serif;
-background:
-radial-gradient(circle at 50% 35%,#063b46 0,#02070b 38%,#000 100%);
-color:#00eaff;
-display:flex;
-flex-direction:column;
-align-items:center;
+    position:relative;
 }
 
-h1{
-margin:28px 0 4px;
-font-size:42px;
-letter-spacing:9px;
-text-shadow:0 0 20px #00eaff;
+/* BACKGROUND */
+.space{
+    position:absolute;
+    inset:0;
+    overflow:hidden;
+    background:
+        radial-gradient(circle at 50% 42%,rgba(0,210,255,.13),transparent 24%),
+        radial-gradient(circle at 20% 20%,rgba(70,90,255,.08),transparent 25%),
+        radial-gradient(circle at 80% 75%,rgba(0,255,220,.06),transparent 28%),
+        #02050b;
 }
 
-#status{
-font-size:11px;
-opacity:.75;
-margin-bottom:12px;
+.space:before{
+    content:"";
+    position:absolute;
+    inset:-50%;
+    background-image:
+        radial-gradient(circle,rgba(255,255,255,.55) 1px,transparent 1.5px);
+    background-size:72px 72px;
+    opacity:.16;
+    animation:stars 35s linear infinite;
 }
 
-#orb{
-width:180px;
-height:180px;
-border-radius:50%;
-margin:5px 0 15px;
-border:2px solid #00eaff;
-box-shadow:
-0 0 25px #00eaff,
-inset 0 0 30px #00eaff;
-animation:pulse 2s infinite alternate;
+@keyframes stars{
+    from{transform:translate(0,0)}
+    to{transform:translate(72px,72px)}
+}
+
+/* SCANLINES */
+.scanlines{
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    opacity:.035;
+    background:repeating-linear-gradient(
+        0deg,
+        transparent 0px,
+        transparent 3px,
+        #7df9ff 4px
+    );
+}
+
+/* TOP BRAND */
+.brand{
+    position:absolute;
+    top:15px;
+    left:50%;
+    transform:translateX(-50%);
+    text-align:center;
+    z-index:20;
+    white-space:nowrap;
+}
+
+.brand h1{
+    font-size:13px;
+    letter-spacing:5px;
+    font-weight:500;
+    text-shadow:0 0 12px rgba(90,240,255,.8);
+}
+
+.brand p{
+    margin-top:3px;
+    font-size:6px;
+    letter-spacing:2.5px;
+    opacity:.62;
+}
+
+/* SYSTEM PANELS */
+.panel{
+    position:absolute;
+    top:25%;
+    width:102px;
+    padding:8px;
+    border:1px solid rgba(95,230,255,.2);
+    background:rgba(3,16,25,.48);
+    backdrop-filter:blur(7px);
+    box-shadow:0 0 16px rgba(0,190,255,.06);
+    z-index:10;
+}
+
+.panel.left{
+    left:13px;
+}
+
+.panel.right{
+    right:13px;
+}
+
+.panel-title{
+    font-size:6px;
+    letter-spacing:2px;
+    opacity:.55;
+    margin-bottom:6px;
+}
+
+.row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-size:7px;
+    margin:5px 0;
+}
+
+.dot{
+    width:5px;
+    height:5px;
+    border-radius:50%;
+    background:#6dfff2;
+    box-shadow:0 0 7px #6dfff2;
+}
+
+/* CORE */
+.core{
+    position:absolute;
+    left:50%;
+    top:43%;
+    transform:translate(-50%,-50%);
+    width:125px;
+    height:125px;
+    z-index:5;
+}
+
+.ring{
+    position:absolute;
+    inset:5px;
+    border:1px solid rgba(105,240,255,.5);
+    border-radius:50%;
+    box-shadow:
+        0 0 12px rgba(0,220,255,.25),
+        inset 0 0 15px rgba(0,220,255,.1);
+    animation:spin 10s linear infinite;
+}
+
+.ring.r2{
+    inset:17px;
+    border-style:dashed;
+    opacity:.7;
+    animation:spinReverse 7s linear infinite;
+}
+
+.ring.r3{
+    inset:29px;
+    border-color:rgba(140,120,255,.55);
+    animation:spin 5s linear infinite;
+}
+
+@keyframes spin{
+    to{transform:rotate(360deg)}
+}
+
+@keyframes spinReverse{
+    to{transform:rotate(-360deg)}
+}
+
+.core-orb{
+    position:absolute;
+    left:50%;
+    top:50%;
+    width:48px;
+    height:48px;
+    transform:translate(-50%,-50%);
+    border-radius:50%;
+    background:
+        radial-gradient(circle at 35% 30%,#e9ffff 0 4%,#62efff 14%,#087bba 45%,#03182b 72%);
+    box-shadow:
+        0 0 12px #38eaff,
+        0 0 35px rgba(0,220,255,.55),
+        0 0 65px rgba(50,80,255,.25);
+    animation:pulse 2.3s ease-in-out infinite;
 }
 
 @keyframes pulse{
-from{transform:scale(.96);opacity:.75}
-to{transform:scale(1);opacity:1}
+    50%{
+        transform:translate(-50%,-50%) scale(1.07);
+        box-shadow:
+            0 0 18px #38eaff,
+            0 0 45px rgba(0,220,255,.7),
+            0 0 75px rgba(50,80,255,.35);
+    }
 }
 
-#chat{
-width:min(92%,720px);
-height:45vh;
-overflow:auto;
-padding:15px;
-border:1px solid #00eaff55;
-border-radius:18px;
-background:#02070bcc;
-backdrop-filter:blur(8px);
+.core-label{
+    position:absolute;
+    bottom:-18px;
+    width:100%;
+    text-align:center;
+    font-size:6px;
+    letter-spacing:3px;
+    opacity:.55;
+}
+
+/* VOICE WAVE */
+.wave{
+    position:absolute;
+    left:50%;
+    top:calc(43% + 83px);
+    transform:translateX(-50%);
+    display:flex;
+    gap:2px;
+    align-items:center;
+    height:18px;
+}
+
+.wave span{
+    width:2px;
+    height:5px;
+    border-radius:2px;
+    background:#6df5ff;
+    box-shadow:0 0 5px rgba(80,240,255,.8);
+    animation:wave 1s ease-in-out infinite;
+}
+
+.wave span:nth-child(2){animation-delay:.08s}
+.wave span:nth-child(3){animation-delay:.16s}
+.wave span:nth-child(4){animation-delay:.24s}
+.wave span:nth-child(5){animation-delay:.32s}
+.wave span:nth-child(6){animation-delay:.40s}
+.wave span:nth-child(7){animation-delay:.32s}
+.wave span:nth-child(8){animation-delay:.24s}
+.wave span:nth-child(9){animation-delay:.16s}
+.wave span:nth-child(10){animation-delay:.08s}
+
+@keyframes wave{
+    50%{height:16px}
+}
+
+/* STATUS */
+.status{
+    position:absolute;
+    left:50%;
+    top:calc(43% + 108px);
+    transform:translateX(-50%);
+    font-size:6px;
+    letter-spacing:2px;
+    opacity:.5;
+    white-space:nowrap;
+}
+
+/* CHAT */
+.chat{
+    position:absolute;
+    left:50%;
+    bottom:70px;
+    transform:translateX(-50%);
+    width:min(360px,calc(100% - 34px));
+    height:105px;
+    overflow-y:auto;
+    padding:7px;
+    z-index:15;
+    scrollbar-width:none;
+}
+
+.chat::-webkit-scrollbar{
+    display:none;
 }
 
 .msg{
-padding:11px 14px;
-margin:8px 0;
-border-radius:12px;
-line-height:1.4;
+    width:max-content;
+    max-width:82%;
+    margin:4px 0;
+    padding:6px 8px;
+    border:1px solid rgba(100,230,255,.16);
+    background:rgba(5,22,33,.62);
+    backdrop-filter:blur(5px);
+    font-size:8px;
+    line-height:1.35;
 }
 
-.user{
-background:#06404a;
-text-align:right;
-color:#fff;
+.msg.user{
+    margin-left:auto;
+    border-radius:8px 8px 2px 8px;
 }
 
-.ai{
-background:#101a25;
+.msg.ai{
+    border-radius:8px 8px 8px 2px;
 }
 
-#bar{
-width:min(92%,720px);
-display:flex;
-gap:8px;
-margin-top:12px;
+/* COMMAND BAR */
+.command{
+    position:absolute;
+    left:50%;
+    bottom:20px;
+    transform:translateX(-50%);
+    width:min(380px,calc(100% - 30px));
+    display:flex;
+    gap:5px;
+    z-index:30;
 }
 
-input{
-flex:1;
-min-width:0;
-padding:14px;
-border-radius:13px;
-border:1px solid #00eaff66;
-outline:none;
-background:#02070b;
-color:white;
-font-size:16px;
+.command input{
+    flex:1;
+    min-width:0;
+    height:32px;
+    padding:0 10px;
+    border:1px solid rgba(90,230,255,.25);
+    border-radius:8px;
+    outline:none;
+    color:#dffcff;
+    background:rgba(3,16,25,.72);
+    backdrop-filter:blur(8px);
+    font-size:9px;
 }
 
-button{
-border:0;
-border-radius:13px;
-padding:14px 19px;
-font-weight:bold;
-cursor:pointer;
-background:#00eaff;
-color:#001015;
+.command input::placeholder{
+    color:rgba(220,250,255,.35);
 }
 
-#mic{
-margin-top:10px;
-width:58px;
-height:58px;
-border-radius:50%;
-font-size:22px;
-padding:0;
+.command button{
+    width:50px;
+    height:32px;
+    border:1px solid rgba(100,240,255,.35);
+    border-radius:8px;
+    color:#bfffff;
+    background:rgba(0,100,130,.22);
+    font-size:7px;
+    letter-spacing:1px;
+    cursor:pointer;
 }
 
-@media(max-width:600px){
-h1{font-size:31px;margin-top:20px}
-#orb{width:135px;height:135px}
-#chat{height:47vh}
-button{padding:13px}
+.command button:active{
+    transform:scale(.95);
+}
+
+/* MIC */
+.mic{
+    position:absolute;
+    right:15px;
+    bottom:72px;
+    width:38px;
+    height:38px;
+    border-radius:50%;
+    border:1px solid rgba(100,240,255,.35);
+    color:#bfffff;
+    background:rgba(3,20,30,.7);
+    box-shadow:0 0 12px rgba(0,220,255,.14);
+    z-index:35;
+    cursor:pointer;
+    font-size:15px;
+}
+
+.mic.active{
+    box-shadow:
+        0 0 10px rgba(0,240,255,.8),
+        0 0 28px rgba(0,220,255,.35);
+    animation:micPulse 1s infinite;
+}
+
+@keyframes micPulse{
+    50%{transform:scale(1.08)}
+}
+
+/* MOBILE */
+@media(max-width:500px){
+    .brand{
+        top:11px;
+    }
+
+    .brand h1{
+        font-size:11px;
+        letter-spacing:4px;
+    }
+
+    .brand p{
+        font-size:5px;
+    }
+
+    .panel{
+        width:78px;
+        top:25%;
+        padding:6px;
+    }
+
+    .panel.left{left:7px}
+    .panel.right{right:7px}
+
+    .panel-title{
+        font-size:5px;
+    }
+
+    .row{
+        font-size:6px;
+        margin:4px 0;
+    }
+
+    .core{
+        width:108px;
+        height:108px;
+    }
+
+    .core-orb{
+        width:41px;
+        height:41px;
+    }
+
+    .wave{
+        top:calc(43% + 72px);
+    }
+
+    .status{
+        top:calc(43% + 94px);
+        font-size:5px;
+    }
+
+    .chat{
+        height:92px;
+        bottom:62px;
+    }
+
+    .mic{
+        right:10px;
+        bottom:66px;
+        width:34px;
+        height:34px;
+        font-size:13px;
+    }
+
+    .command{
+        bottom:17px;
+    }
 }
 </style>
 </head>
 
 <body>
 
-<h1>RAKIB</h1>
-<div id="status">RAKIB 2.0 INITIALIZING...</div>
+<div class="space"></div>
+<div class="scanlines"></div>
 
-<div id="orb"></div>
-
-<div id="chat"></div>
-
-<div id="bar">
-<input id="input" placeholder="Ask RAKIB anything...">
-<button id="send">SEND</button>
+<!-- BRAND -->
+<div class="brand">
+    <h1>R.A.K.I.B 3.0</h1>
+    <p>MADE BY RAKIB RAHIM</p>
 </div>
 
-<button id="mic">🎙️</button>
+<!-- LEFT PANEL -->
+<div class="panel left">
+    <div class="panel-title">SYSTEM</div>
+
+    <div class="row">
+        <span>CORE</span>
+        <span class="dot"></span>
+    </div>
+
+    <div class="row">
+        <span>MEMORY</span>
+        <span class="dot"></span>
+    </div>
+
+    <div class="row">
+        <span>TOOLS</span>
+        <span class="dot"></span>
+    </div>
+</div>
+
+<!-- RIGHT PANEL -->
+<div class="panel right">
+    <div class="panel-title">CONTROL</div>
+
+    <div class="row">
+        <span>AI</span>
+        <span class="dot"></span>
+    </div>
+
+    <div class="row">
+        <span>WEB</span>
+        <span class="dot"></span>
+    </div>
+
+    <div class="row">
+        <span>VOICE</span>
+        <span class="dot"></span>
+    </div>
+</div>
+
+<!-- CORE -->
+<div class="core">
+    <div class="ring"></div>
+    <div class="ring r2"></div>
+    <div class="ring r3"></div>
+    <div class="core-orb"></div>
+    <div class="core-label">INTELLIGENCE CORE</div>
+</div>
+
+<!-- VOICE ACTIVITY -->
+<div class="wave">
+    <span></span><span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span><span></span><span></span>
+</div>
+
+<div class="status" id="status">RAKIB 3.0 ONLINE</div>
+
+<!-- CHAT -->
+<div class="chat" id="chat"></div>
+
+<!-- COMMAND -->
+<div class="command">
+    <input
+        id="input"
+        type="text"
+        autocomplete="off"
+        placeholder="Ask RAKIB..."
+    >
+    <button id="send">SEND</button>
+</div>
+
+<!-- MIC -->
+<button class="mic" id="mic" aria-label="Voice input">🎙</button>
 
 <script>
-const input=document.getElementById("input");
-const send=document.getElementById("send");
-const mic=document.getElementById("mic");
-const chat=document.getElementById("chat");
-const status=document.getElementById("status");
+const input = document.getElementById("input");
+const send = document.getElementById("send");
+const chat = document.getElementById("chat");
+const mic = document.getElementById("mic");
+const statusBox = document.getElementById("status");
 
 function add(text,type){
-    const el=document.createElement("div");
-    el.className="msg "+type;
-    el.textContent=text;
-    chat.appendChild(el);
+    const box=document.createElement("div");
+    box.className="msg "+type;
+    box.textContent=text;
+    chat.appendChild(box);
     chat.scrollTop=chat.scrollHeight;
+}
+
+function speak(text){
+    if(!("speechSynthesis" in window)) return;
+
+    window.speechSynthesis.cancel();
+
+    const utterance=new SpeechSynthesisUtterance(text);
+    utterance.rate=.96;
+    utterance.pitch=1;
+    utterance.volume=1;
+
+    window.speechSynthesis.speak(utterance);
 }
 
 async function ask(){
     const command=input.value.trim();
 
-    if(!command)return;
+    if(!command) return;
 
     add(command,"user");
     input.value="";
-    status.textContent="RAKIB THINKING...";
+    statusBox.textContent="RAKIB THINKING...";
 
     try{
         const response=await fetch(
@@ -174,83 +581,95 @@ async function ask(){
                 headers:{
                     "Content-Type":"application/json"
                 },
-                body:JSON.stringify({command})
+                body:JSON.stringify({
+                    command:command
+                })
             }
         );
 
         const data=await response.json();
 
-        add(
-            data.reply || "No response received.",
-            "ai"
-        );
+        const reply=data.reply || "No response received.";
 
-        status.textContent=
-            "RAKIB 3.0 ONLINE • "+
-            (data.provider || "core");
+        add(reply,"ai");
 
-        speak(data.reply);
+        statusBox.textContent=
+            "RAKIB 3.0 • "+
+            (data.provider || "CORE");
+
+        speak(reply);
 
     }catch(error){
         add(
-            "RAKIB backend is offline. Start the server.",
+            "RAKIB backend is offline. Start the RAKIB server.",
             "ai"
         );
 
-        status.textContent="BACKEND OFFLINE";
+        statusBox.textContent="BACKEND OFFLINE";
     }
 }
 
-function speak(text){
-    if(!text || !("speechSynthesis" in window))return;
+send.addEventListener("click",ask);
 
-    speechSynthesis.cancel();
-
-    const voice=new SpeechSynthesisUtterance(text);
-    voice.rate=.95;
-    voice.pitch=1;
-
-    speechSynthesis.speak(voice);
-}
-
-send.onclick=ask;
-
-input.addEventListener("keydown",e=>{
-    if(e.key==="Enter")ask();
+input.addEventListener("keydown",function(event){
+    if(event.key==="Enter"){
+        event.preventDefault();
+        ask();
+    }
 });
 
-mic.onclick=()=>{
-    if(!("webkitSpeechRecognition" in window ||
-         "SpeechRecognition" in window)){
-        status.textContent="VOICE INPUT NOT SUPPORTED";
-        return;
-    }
+/* VOICE */
+const SpeechRecognition =
+    window.SpeechRecognition ||
+    window.webkitSpeechRecognition;
 
-    const Recognition=
-        window.SpeechRecognition ||
-        window.webkitSpeechRecognition;
+let recognition=null;
 
-    const recognition=new Recognition();
-
+if(SpeechRecognition){
+    recognition=new SpeechRecognition();
     recognition.lang="en-IN";
+    recognition.continuous=false;
     recognition.interimResults=false;
 
-    status.textContent="LISTENING...";
+    recognition.onstart=function(){
+        mic.classList.add("active");
+        statusBox.textContent="LISTENING...";
+    };
 
-    recognition.onresult=e=>{
-        input.value=e.results[0][0].transcript;
+    recognition.onend=function(){
+        mic.classList.remove("active");
+        if(statusBox.textContent==="LISTENING..."){
+            statusBox.textContent="RAKIB 3.0 ONLINE";
+        }
+    };
+
+    recognition.onresult=function(event){
+        const text=event.results[0][0].transcript;
+        input.value=text;
         ask();
     };
 
-    recognition.onerror=()=>{
-        status.textContent="VOICE ERROR";
+    recognition.onerror=function(){
+        mic.classList.remove("active");
+        statusBox.textContent="VOICE READY";
     };
+}
 
-    recognition.start();
-};
+mic.addEventListener("click",function(){
+    if(!recognition){
+        statusBox.textContent="VOICE NOT SUPPORTED";
+        return;
+    }
 
-status.textContent="RAKIB 3.0 ONLINE";
-add("RAKIB 2.0 is ready.","ai");
+    try{
+        recognition.start();
+    }catch(e){}
+});
+
+/* Initial greeting */
+setTimeout(function(){
+    add("RAKIB 3.0 systems online.","ai");
+},500);
 </script>
 
 </body>
