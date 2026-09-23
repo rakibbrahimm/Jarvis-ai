@@ -1,21 +1,26 @@
 class RAKIBRouter:
     def __init__(self):
-        self.providers = {}
+        self.providers = []
 
-    def register(self, name, handler):
+    def register(self, name, handler, priority=100):
         if callable(handler):
-            self.providers[name] = handler
+            self.providers.append((priority, name, handler))
+            self.providers.sort(key=lambda x: x[0])
 
     def ask(self, command):
-        for name, handler in self.providers.items():
+        errors = []
+
+        for _, name, handler in self.providers:
             try:
                 result = handler(command)
-                if result:
+
+                if result and str(result).strip():
                     return str(result).strip(), name
+
             except Exception as e:
-                print(f"[{name}] {e}")
+                errors.append(f"{name}: {e}")
 
         return (
-            "I'm online, but no AI provider is currently available.",
+            "I'm online, but no external AI provider is currently available.",
             "rakib-core"
         )
