@@ -3,6 +3,7 @@ import os
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 from rakib_core.router import RAKIBRouter
+from rakib_core.tools import run_tools
 
 PORT = 8082
 router = RAKIBRouter()
@@ -174,22 +175,23 @@ def local_core(command):
     }
 
     if c in greetings:
-        return "Hello! I am RAKIB 2.1. How can I help you?"
+        return "Hello! I am RAKIB 2.2. How can I help you?"
 
     if c in {"who are you", "what are you"}:
         return (
-            "I am RAKIB 2.1, a multi-provider AI assistant."
+            "I am RAKIB 2.2, a multi-provider AI assistant "
+            "with built-in no-key tools."
         )
 
-    if c in {"status", "system status"}:
-        return (
-            "RAKIB 2.1 Core is online. "
-            f"Providers detected: {len(router.providers)}"
-        )
+    tool_result, tool_name = run_tools(command)
+
+    if tool_result:
+        return tool_result
 
     return (
         "RAKIB received your command. "
-        "No external AI provider answered it."
+        "No connected AI provider or built-in tool "
+        "could answer it."
     )
 
 
@@ -260,7 +262,7 @@ class Handler(BaseHTTPRequestHandler):
                 "reply": reply,
                 "provider": provider,
                 "assistant": "RAKIB",
-                "brain": "RAKIB 2.1",
+                "brain": "RAKIB 2.2",
             })
 
         except Exception as e:
