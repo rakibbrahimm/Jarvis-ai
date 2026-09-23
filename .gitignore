@@ -1,0 +1,47 @@
+# Runtime
+backend/jarvis-server.log
+backend/*.log
+
+# Local AI
+local-ai/
+android-sdk/
+
+# Python
+__pycache__/
+*.pyc
+
+# Local memory / backups
+backend/jarvis_memory.json
+backend/server.py.*-backup
+backend/server.py.ai-brain-v1-working
+
+# Historical backups / generated source dumps
+*.backup
+*.working
+*.before-*
+*.phase*
+*_part_*
+all_*_source.txt
+master_part*.txt
+functions_list.txt
+deploy/
+
+# HTML backups
+index.html.*
+
+# All historical backend server snapshots
+backend/server.py.*
+
+# Android generated/build files
+android/.gradle/
+android/build/
+android/app/build/
+android/direct-build/
+android/local.properties
+
+# Legacy placeholder
+jarvis.py
+
+# Alternate/legacy frontend copies
+frontend/
+pwa/
