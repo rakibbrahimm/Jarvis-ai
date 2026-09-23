@@ -11,7 +11,7 @@ import requests
 # =========================================================
 
 HOST = "127.0.0.1"
-PORT = 8081
+PORT = 8082
 
 MEMORY_FILE = "jarvis_memory.json"
 
@@ -434,7 +434,6 @@ def ask_local_ai(command):
     context_text = ""
 
     for item in conversation[-4:]:
-
         context_text += (
             "\nUser: " +
             item["user"] +
@@ -464,6 +463,9 @@ def ask_local_ai(command):
                 "--chat-template",
                 "chatml",
                 "--single-turn",
+                "--no-display-prompt",
+                "--simple-io",
+                "--log-disable",
                 "-c",
                 "1024",
                 "-n",
@@ -478,25 +480,26 @@ def ask_local_ai(command):
             timeout=180
         )
 
-        output = (
-            result.stdout +
-            "\n" +
-            result.stderr
-        ).strip()
+        # llama-cli normally puts generated text in stdout.
+        # stderr contains loading/performance diagnostics.
+        output = (result.stdout or "").strip()
 
         if not output:
+            output = (result.stderr or "").strip()
 
-            return (
-                "My local AI brain did not "
-                "produce a response."
-            )
-
+        # Remove prompt/template markers if present.
         if "<|assistant|>" in output:
+            output = output.rsplit("<|assistant|>", 1)[-1]
 
-            output = output.rsplit(
-                "<|assistant|>",
-                1
-            )[-1]
+        # Remove llama-cli performance/debug output.
+        for marker in (
+            "[ Prompt:",
+            "[ Generation:",
+            "llama_perf_",
+            "llama_print_timings:"
+        ):
+            if marker in output:
+                output = output.split(marker, 1)[0]
 
         lines = []
 
@@ -507,13 +510,40 @@ def ask_local_ai(command):
             if not line:
                 continue
 
-            if line.startswith("[ Prompt:"):
-                break
-
-            if line.startswith("[ Generation:"):
-                break
-
             if line.startswith("llama_"):
+                continue
+
+            if line.startswith("Loading model"):
+                continue
+
+            if line.startswith("build"):
+                continue
+
+            if line.startswith("model"):
+                continue
+
+            if line.startswith("ftype"):
+                continue
+
+            if line.startswith("modalities"):
+                continue
+
+            if line.startswith("available commands"):
+                continue
+
+            if line.startswith("/exit"):
+                continue
+
+            if line.startswith("/regen"):
+                continue
+
+            if line.startswith("/clear"):
+                continue
+
+            if line.startswith("/read"):
+                continue
+
+            if line.startswith("/glob"):
                 continue
 
             if line == ">":
@@ -524,11 +554,7 @@ def ask_local_ai(command):
         reply = " ".join(lines).strip()
 
         if not reply:
-
-            return (
-                "My local AI brain generated "
-                "an empty response."
-            )
+            return "My local AI brain generated an empty response."
 
         return reply[:1500]
 
@@ -541,10 +567,7 @@ def ask_local_ai(command):
 
     except Exception as e:
 
-        print(
-            "LOCAL AI ERROR:",
-            e
-        )
+        print("LOCAL AI ERROR:", e)
 
         return (
             "I encountered a problem while "

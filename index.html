@@ -1217,7 +1217,7 @@ try{
 
 const response =
 await fetch(
-"http://127.0.0.1:8081/ask",
+"http://127.0.0.1:8082/ask",
 {
 method:"POST",
 
@@ -2049,7 +2049,7 @@ function testJVoice(style, rate, pitch){
     }
 
     try{
-      const response=await fetch("http://127.0.0.1:8081/ask",{
+      const response=await fetch("http://127.0.0.1:8082/ask",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({command:command})
@@ -2179,7 +2179,7 @@ send.addEventListener("click",sendCommand);
       commandInput.value = "";
 
       const response = await fetch(
-        "http://127.0.0.1:8081/ask",
+        "http://127.0.0.1:8082/ask",
         {
           method:"POST",
           headers:{
@@ -2836,7 +2836,7 @@ window.addEventListener(
 
     try {
 
-      const response = await fetch("http://127.0.0.1:8081/ask", {
+      const response = await fetch("http://127.0.0.1:8082/ask", {
         method:"POST",
         headers:{
           "Content-Type":"application/json"
@@ -3193,7 +3193,7 @@ window.rakibCheckBackend = async function(){
     try{
 
         const response = await fetch(
-            "http://127.0.0.1:8081/ask",
+            "http://127.0.0.1:8082/ask",
             {
                 method:"POST",
                 headers:{
@@ -3971,7 +3971,7 @@ console.log("RAKIB AUDIO FIX V2 ONLINE");
   if (window.__JARVIS_MASTER_10X__) return;
   window.__JARVIS_MASTER_10X__ = true;
 
-  const API = "http://127.0.0.1:8081/ask";
+  const API = "http://127.0.0.1:8082/ask";
   let busy = false;
 
   function findInput() {
@@ -4171,7 +4171,7 @@ console.log("RAKIB AUDIO FIX V2 ONLINE");
 if(window.__RAKIB_FINAL_IO_CORE__) return;
 window.__RAKIB_FINAL_IO_CORE__ = true;
 
-const API = "http://127.0.0.1:8081/ask";
+const API = "http://127.0.0.1:8082/ask";
 let recognition = null;
 let listening = false;
 let sending = false;
@@ -4929,7 +4929,7 @@ if(
 if(window.__RAKIB_CHAT_FETCH_REPAIR__) return;
 window.__RAKIB_CHAT_FETCH_REPAIR__ = true;
 
-const API = "http://127.0.0.1:8081/ask";
+const API = "http://127.0.0.1:8082/ask";
 
 function replyBox(){
     return document.getElementById("jarvisChatReply");
@@ -5056,7 +5056,7 @@ console.log(
 <!-- RAKIB CHAT FINAL BUTTON V2 -->
 <script>
 (function(){
-  const API='http://127.0.0.1:8081/ask';
+  const API='http://127.0.0.1:8082/ask';
 
   function show(msg){
     const a=document.getElementById('jarvisChatReply');
