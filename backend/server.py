@@ -10,6 +10,46 @@ from rakib_core.diagnostics import diagnostics
 
 
 HOST = "127.0.0.1"
+
+def ollama_provider(command):
+    """Free local AI provider through Ollama."""
+    try:
+        import requests
+
+        response = requests.post(
+            "http://127.0.0.1:11434/api/generate",
+            json={
+                "model": "qwen2.5:0.5b",
+                "prompt": (
+                    "You are RAKIB, a helpful school presentation AI assistant. "
+                    "Answer clearly, accurately, and briefly. "
+                    "If you are unsure, say so instead of inventing facts.\n\n"
+                    f"User: {command}\nRAKIB:"
+                ),
+                "stream": False,
+                "options": {
+                    "temperature": 0.2,
+                    "num_predict": 350
+                }
+            },
+            timeout=60,
+        )
+
+        if response.status_code != 200:
+            print("Ollama ERROR:", response.status_code, response.text[:300])
+            return None
+
+        data = response.json()
+        text = data.get("response")
+
+        if isinstance(text, str) and text.strip():
+            return text.strip()
+
+    except Exception as error:
+        print("Ollama ERROR:", error)
+
+    return None
+
 PORT = 8082
 
 router = RAKIBRouter()
