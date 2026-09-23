@@ -4160,5 +4160,763 @@ console.log("RAKIB AUDIO FIX V2 ONLINE");
 })();
 </script>
 
+
+
+<!-- RAKIB FINAL I/O CORE V1 -->
+<script id="RAKIB_FINAL_IO_CORE">
+(function(){
+
+"use strict";
+
+if(window.__RAKIB_FINAL_IO_CORE__) return;
+window.__RAKIB_FINAL_IO_CORE__ = true;
+
+const API = "http://127.0.0.1:8081/ask";
+let recognition = null;
+let listening = false;
+let sending = false;
+
+
+/* =========================================================
+   ELEMENT HELPERS
+========================================================= */
+
+function el(id){
+    return document.getElementById(id);
+}
+
+function setText(id,text){
+    const x = el(id);
+    if(x) x.innerText = String(text ?? "");
+}
+
+function setState(state){
+    setText("status", state);
+    setText("voiceState", state);
+}
+
+
+/* =========================================================
+   OUTPUT
+========================================================= */
+
+function showReply(reply){
+
+    reply = String(reply || "").trim();
+
+    if(!reply){
+        reply = "No response received.";
+    }
+
+    const box = el("jarvisChatReply");
+
+    if(box){
+        box.style.display = "block";
+        box.textContent = reply;
+    }
+
+    const heard = el("heard");
+
+    if(heard){
+        heard.textContent = "RAKIB: " + reply;
+    }
+
+    window.jarvisLastReply = reply;
+
+    return reply;
+}
+
+
+/* =========================================================
+   RELIABLE SPEAKER
+========================================================= */
+
+window.rakibFinalSpeak = function(text){
+
+    text = String(text || "")
+        .replace(/<[^>]*>/g," ")
+        .replace(/\s+/g," ")
+        .trim();
+
+    if(!text) return;
+
+    if(!("speechSynthesis" in window)){
+        console.log("RAKIB TTS unavailable");
+        return;
+    }
+
+    try{
+        speechSynthesis.cancel();
+        speechSynthesis.resume();
+    }catch(e){}
+
+    const speakNow = function(){
+
+        try{
+
+            const u =
+                new SpeechSynthesisUtterance(text);
+
+            const voices =
+                speechSynthesis.getVoices() || [];
+
+            const hindi =
+                /[\u0900-\u097F]/.test(text);
+
+            let voice = null;
+
+            if(hindi){
+
+                voice =
+                    voices.find(v => /^hi-IN$/i.test(v.lang)) ||
+                    voices.find(v => /^hi-/i.test(v.lang));
+
+            }else{
+
+                voice =
+                    voices.find(v => /^en-IN$/i.test(v.lang)) ||
+                    voices.find(v => /^en-US$/i.test(v.lang)) ||
+                    voices.find(v => /^en-/i.test(v.lang));
+
+            }
+
+            if(voice){
+                u.voice = voice;
+                u.lang = voice.lang;
+            }else{
+                u.lang = hindi ? "hi-IN" : "en-IN";
+            }
+
+            u.rate = 0.90;
+            u.pitch = 0.78;
+            u.volume = 1;
+
+            u.onstart = function(){
+                setState("SPEAKING...");
+            };
+
+            u.onend = function(){
+                setState("READY");
+            };
+
+            u.onerror = function(e){
+                console.log("RAKIB FINAL TTS ERROR:", e);
+                setState("READY");
+            };
+
+            speechSynthesis.speak(u);
+
+        }catch(e){
+
+            console.log("RAKIB FINAL SPEAK ERROR:",e);
+            setState("READY");
+
+        }
+    };
+
+    const voices =
+        speechSynthesis.getVoices();
+
+    if(voices && voices.length){
+
+        speakNow();
+
+    }else{
+
+        let done = false;
+
+        const once = function(){
+
+            if(done) return;
+
+            done = true;
+
+            try{
+                speechSynthesis.removeEventListener(
+                    "voiceschanged",
+                    once
+                );
+            }catch(e){}
+
+            speakNow();
+        };
+
+        speechSynthesis.addEventListener(
+            "voiceschanged",
+            once
+        );
+
+        setTimeout(once,700);
+    }
+};
+
+
+/* Make every later jarvisSpeak call use the reliable speaker */
+window.jarvisSpeak = window.rakibFinalSpeak;
+
+
+/* =========================================================
+   BACKEND COMMAND PIPELINE
+========================================================= */
+
+window.rakibFinalSend = async function(command){
+
+    command = String(command || "").trim();
+
+    if(!command || sending) return;
+
+    sending = true;
+
+    setState("THINKING...");
+
+    const box = el("jarvisChatReply");
+
+    if(box){
+        box.style.display = "block";
+        box.textContent = "RAKIB is thinking...";
+    }
+
+    try{
+
+        const controller =
+            new AbortController();
+
+        const timer =
+            setTimeout(
+                () => controller.abort(),
+                30000
+            );
+
+        const response =
+            await fetch(API,{
+                method:"POST",
+                headers:{
+                    "Content-Type":"application/json"
+                },
+                body:JSON.stringify({
+                    command:command
+                }),
+                signal:controller.signal
+            });
+
+        clearTimeout(timer);
+
+        if(!response.ok){
+            throw new Error(
+                "HTTP " + response.status
+            );
+        }
+
+        const data =
+            await response.json();
+
+        const reply =
+            data.reply ||
+            data.response ||
+            "Command processed.";
+
+        showReply(reply);
+
+        setState("SPEAKING...");
+
+        window.rakibFinalSpeak(reply);
+
+        try{
+            window.dispatchEvent(
+                new CustomEvent(
+                    "JARVIS_REPLY",
+                    {detail:reply}
+                )
+            );
+        }catch(e){}
+
+    }catch(error){
+
+        console.log(
+            "RAKIB FINAL BACKEND ERROR:",
+            error
+        );
+
+        const msg =
+            error.name === "AbortError"
+            ? "RAKIB backend timed out."
+            : "RAKIB backend connection failed. Start server.py on port 8081.";
+
+        showReply(msg);
+        setState("READY");
+
+    }finally{
+
+        sending = false;
+
+    }
+};
+
+
+/* =========================================================
+   CHAT INPUT
+========================================================= */
+
+function bindChat(){
+
+    const input =
+        el("jarvisChatInput");
+
+    const send =
+        el("jarvisChatSend");
+
+    if(!input || !send){
+        console.log("RAKIB FINAL: chat controls missing");
+        return;
+    }
+
+    /* Clone removes old duplicate listeners */
+    const newSend =
+        send.cloneNode(true);
+
+    send.parentNode.replaceChild(
+        newSend,
+        send
+    );
+
+    const newInput =
+        input.cloneNode(true);
+
+    input.parentNode.replaceChild(
+        newInput,
+        input
+    );
+
+    newSend.addEventListener(
+        "click",
+        function(e){
+
+            e.preventDefault();
+
+            const command =
+                newInput.value.trim();
+
+            if(!command) return;
+
+            newInput.value = "";
+
+            window.rakibFinalSend(command);
+        }
+    );
+
+    newInput.addEventListener(
+        "keydown",
+        function(e){
+
+            if(e.key === "Enter"){
+
+                e.preventDefault();
+
+                const command =
+                    newInput.value.trim();
+
+                if(!command) return;
+
+                newInput.value = "";
+
+                window.rakibFinalSend(command);
+            }
+        }
+    );
+
+    console.log("RAKIB FINAL: chat online");
+}
+
+
+/* =========================================================
+   MICROPHONE
+========================================================= */
+
+function setupRecognition(){
+
+    const Recognition =
+        window.SpeechRecognition ||
+        window.webkitSpeechRecognition;
+
+    if(!Recognition){
+
+        console.log(
+            "RAKIB FINAL: SpeechRecognition unavailable"
+        );
+
+        setText(
+            "heard",
+            "Voice input is not supported by this browser."
+        );
+
+        return null;
+    }
+
+    const r =
+        new Recognition();
+
+    r.lang = "en-IN";
+    r.continuous = false;
+    r.interimResults = false;
+    r.maxAlternatives = 1;
+
+    r.onstart = function(){
+
+        listening = true;
+
+        setState("LISTENING...");
+
+        const mic =
+            el("jarvisFloatingMic");
+
+        if(mic){
+            mic.classList.add("listening");
+        }
+
+        setText(
+            "heard",
+            "Speak now..."
+        );
+
+        console.log(
+            "RAKIB FINAL MIC: LISTENING"
+        );
+    };
+
+    r.onresult = function(event){
+
+        const result =
+            event.results &&
+            event.results[0] &&
+            event.results[0][0];
+
+        if(!result) return;
+
+        const text =
+            String(
+                result.transcript || ""
+            ).trim();
+
+        console.log(
+            "RAKIB FINAL MIC INPUT:",
+            text
+        );
+
+        if(!text) return;
+
+        const input =
+            el("jarvisChatInput");
+
+        if(input){
+            input.value = text;
+        }
+
+        window.rakibFinalSend(text);
+    };
+
+    r.onerror = function(event){
+
+        console.log(
+            "RAKIB FINAL MIC ERROR:",
+            event.error
+        );
+
+        listening = false;
+
+        const mic =
+            el("jarvisFloatingMic");
+
+        if(mic){
+            mic.classList.remove("listening");
+        }
+
+        setState("READY");
+
+        setText(
+            "heard",
+            "Mic: " + (event.error || "unknown error")
+        );
+    };
+
+    r.onend = function(){
+
+        listening = false;
+
+        const mic =
+            el("jarvisFloatingMic");
+
+        if(mic){
+            mic.classList.remove("listening");
+        }
+
+        if(!sending){
+            setState("READY");
+        }
+
+        console.log(
+            "RAKIB FINAL MIC: END"
+        );
+    };
+
+    return r;
+}
+
+
+/* =========================================================
+   FLOATING MIC
+========================================================= */
+
+function bindMic(){
+
+    const mic =
+        el("jarvisFloatingMic");
+
+    if(!mic){
+        console.log(
+            "RAKIB FINAL: floating mic missing"
+        );
+        return;
+    }
+
+    /*
+       Clone the mic so every old addEventListener
+       attached by previous patches is removed.
+    */
+    const newMic =
+        mic.cloneNode(true);
+
+    mic.parentNode.replaceChild(
+        newMic,
+        mic
+    );
+
+    recognition =
+        setupRecognition();
+
+    newMic.addEventListener(
+        "click",
+        function(e){
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            if(!recognition){
+
+                setText(
+                    "heard",
+                    "Voice input unavailable in this browser."
+                );
+
+                return;
+            }
+
+            if(listening){
+
+                try{
+                    recognition.stop();
+                }catch(err){}
+
+                return;
+            }
+
+            try{
+
+                /*
+                   Stop speech before listening so RAKIB
+                   does not hear its own output.
+                */
+                if("speechSynthesis" in window){
+                    speechSynthesis.cancel();
+                }
+
+                recognition.start();
+
+            }catch(err){
+
+                console.log(
+                    "RAKIB FINAL MIC START ERROR:",
+                    err
+                );
+
+                listening = false;
+                setState("READY");
+            }
+        }
+    );
+
+    console.log(
+        "RAKIB FINAL: floating mic online"
+    );
+}
+
+
+/* =========================================================
+   HAND CONTROL SAFE BIND
+========================================================= */
+
+function bindHandButtons(){
+
+    const buttons =
+        document.querySelectorAll(
+            'button[onclick="startHandControl()"]'
+        );
+
+    buttons.forEach(function(button){
+
+        const clone =
+            button.cloneNode(true);
+
+        button.parentNode.replaceChild(
+            clone,
+            button
+        );
+
+        clone.addEventListener(
+            "click",
+            async function(e){
+
+                e.preventDefault();
+
+                try{
+
+                    if(typeof window.startHandControl === "function"){
+
+                        await window.startHandControl();
+
+                    }else{
+
+                        setText(
+                            "heard",
+                            "Hand control engine is unavailable."
+                        );
+
+                    }
+
+                }catch(error){
+
+                    console.log(
+                        "RAKIB HAND START ERROR:",
+                        error
+                    );
+
+                    setText(
+                        "heard",
+                        "Hand control error: " +
+                        error.message
+                    );
+
+                    setText(
+                        "handState",
+                        "ERROR"
+                    );
+                }
+            }
+        );
+    });
+
+    const stopButtons =
+        document.querySelectorAll(
+            'button[onclick="stopHandControl()"]'
+        );
+
+    stopButtons.forEach(function(button){
+
+        const clone =
+            button.cloneNode(true);
+
+        button.parentNode.replaceChild(
+            clone,
+            button
+        );
+
+        clone.addEventListener(
+            "click",
+            function(e){
+
+                e.preventDefault();
+
+                try{
+
+                    if(typeof window.stopHandControl === "function"){
+                        window.stopHandControl();
+                    }
+
+                    setText(
+                        "handState",
+                        "READY"
+                    );
+
+                }catch(error){
+
+                    console.log(
+                        "RAKIB HAND STOP ERROR:",
+                        error
+                    );
+                }
+            }
+        );
+    });
+
+    console.log(
+        "RAKIB FINAL: hand buttons rebound"
+    );
+}
+
+
+/* =========================================================
+   START
+========================================================= */
+
+function boot(){
+
+    bindChat();
+    bindMic();
+    bindHandButtons();
+
+    setState("READY");
+
+    console.log(
+        "========================================"
+    );
+
+    console.log(
+        "RAKIB FINAL I/O CORE ONLINE"
+    );
+
+    console.log(
+        "VOICE: READY"
+    );
+
+    console.log(
+        "MIC: READY"
+    );
+
+    console.log(
+        "CHAT: READY"
+    );
+
+    console.log(
+        "HAND: BOUND"
+    );
+
+    console.log(
+        "========================================"
+    );
+}
+
+if(
+    document.readyState === "loading"
+){
+    document.addEventListener(
+        "DOMContentLoaded",
+        boot
+    );
+}else{
+    boot();
+}
+
+})();
+</script>
+
 </body>
 </html>
