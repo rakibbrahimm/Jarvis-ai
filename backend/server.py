@@ -366,40 +366,46 @@ def ask_online_ai(command, attachment=None):
 
         data = response.json()
 
-        # Responses API convenience field
+        # Robust Responses API text extraction
         text = data.get("output_text")
 
-        if text:
+        if isinstance(text, str) and text.strip():
             return text.strip()[:3000]
-
-        # Fallback parser
-        output = data.get("output", [])
 
         parts = []
 
-        for item in output:
-
-            if item.get("type") != "message":
+        for item in data.get("output", []) or []:
+            if not isinstance(item, dict):
                 continue
 
-            for content in item.get("content", []):
+            for content in item.get("content", []) or []:
+                if not isinstance(content, dict):
+                    continue
 
-                if content.get("type") == "output_text":
+                text_part = content.get("text")
 
-                    text_part = content.get(
-                        "text",
-                        ""
-                    )
+                if isinstance(text_part, str) and text_part.strip():
+                    parts.append(text_part.strip())
 
-                    if text_part:
-                        parts.append(text_part)
+                # Some response formats may wrap text in a nested value.
+                if isinstance(text_part, dict):
+                    value = text_part.get("value")
+                    if isinstance(value, str) and value.strip():
+                        parts.append(value.strip())
 
         reply = "\n".join(parts).strip()
 
         if reply:
             return reply[:3000]
 
-        print("ONLINE AI ERROR: Empty response")
+        print(
+            "ONLINE AI ERROR: Empty response. "
+            f"keys={list(data.keys())}"
+        )
+        print(
+            "ONLINE AI RAW RESPONSE:",
+            str(data)[:3000]
+        )
 
         return None
 
