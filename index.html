@@ -3959,5 +3959,206 @@ console.log("RAKIB AUDIO FIX V2 ONLINE");
 })();
 </script>
 
+
+<!-- =========================================================
+     JARVIS MASTER 10X CONTROL CORE
+     Safe additive layer - existing JARVIS systems preserved
+========================================================= -->
+<script>
+(() => {
+  "use strict";
+
+  if (window.__JARVIS_MASTER_10X__) return;
+  window.__JARVIS_MASTER_10X__ = true;
+
+  const API = "http://127.0.0.1:8081/ask";
+  let busy = false;
+
+  function findInput() {
+    return document.querySelector(
+      '#jarvisChatInput, #chatInput, textarea[placeholder*="Talk"], input[placeholder*="Talk"], textarea[placeholder*="RAKIB"], input[placeholder*="RAKIB"]'
+    );
+  }
+
+  function findSend() {
+    return document.querySelector(
+      '#jarvisSendButton, #sendButton, button[type="submit"], button'
+    );
+  }
+
+  function findOutput() {
+    return document.querySelector(
+      '#jarvisOutput, #jarvisReply, #chatOutput, #response, #jarvisResponse, .jarvis-output'
+    );
+  }
+
+  function speak(text) {
+    if (!text) return;
+
+    if (typeof window.jarvisSpeak === "function") {
+      try {
+        window.jarvisSpeak(String(text));
+        return;
+      } catch (_) {}
+    }
+
+    if ("speechSynthesis" in window) {
+      try {
+        speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(String(text));
+        u.rate = 1;
+        u.pitch = 1;
+        speechSynthesis.speak(u);
+      } catch (_) {}
+    }
+  }
+
+  function show(text) {
+    const out = findOutput();
+    if (out) {
+      out.textContent = String(text);
+      out.scrollTop = out.scrollHeight;
+    }
+
+    window.dispatchEvent(
+      new CustomEvent("jarvis:reply", { detail: String(text) })
+    );
+  }
+
+  async function ask(text) {
+    text = String(text || "").trim();
+    if (!text || busy) return;
+
+    busy = true;
+
+    const input = findInput();
+    if (input) input.disabled = true;
+
+    show("Thinking...");
+
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 30000);
+
+      const response = await fetch(API, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({command: text}),
+        signal: controller.signal
+      });
+
+      clearTimeout(timer);
+
+      if (!response.ok) {
+        throw new Error("Backend HTTP " + response.status);
+      }
+
+      const data = await response.json();
+      const reply =
+        data.reply ||
+        data.response ||
+        data.answer ||
+        "I received your command.";
+
+      show(reply);
+      speak(reply);
+
+    } catch (err) {
+      console.error("JARVIS MASTER CORE:", err);
+
+      const message =
+        err.name === "AbortError"
+          ? "JARVIS backend timed out."
+          : "JARVIS backend is offline. Start server.py on port 8081.";
+
+      show(message);
+    } finally {
+      busy = false;
+      if (input) input.disabled = false;
+      if (input) input.focus();
+    }
+  }
+
+  window.JARVIS_MASTER_ASK = ask;
+
+  /* ENTER = SEND */
+  document.addEventListener("keydown", e => {
+    if (e.key !== "Enter" || e.shiftKey) return;
+
+    const input = findInput();
+    if (!input || document.activeElement !== input) return;
+
+    e.preventDefault();
+    ask(input.value);
+  }, true);
+
+  /* SEND button fallback */
+  document.addEventListener("click", e => {
+    const el = e.target.closest("button");
+    if (!el) return;
+
+    const text = (el.innerText || el.textContent || "").trim().toUpperCase();
+
+    if (!["SEND", "ASK", "GO"].includes(text)) return;
+
+    const input = findInput();
+    if (!input || !input.value.trim()) return;
+
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    ask(input.value);
+  }, true);
+
+  /* TOUCH SAFETY */
+  document.addEventListener("touchstart", e => {
+    if (e.touches.length > 1) {
+      document.documentElement.style.touchAction = "none";
+    }
+  }, {passive: true});
+
+  document.addEventListener("touchend", () => {
+    document.documentElement.style.touchAction = "";
+  }, {passive: true});
+
+  /* BACKEND HEALTH */
+  async function healthCheck() {
+    try {
+      const r = await fetch(API.replace("/ask", "/"), {
+        method: "GET",
+        cache: "no-store"
+      });
+
+      document.documentElement.dataset.jarvisBackend =
+        r.ok ? "online" : "offline";
+
+      window.dispatchEvent(
+        new CustomEvent("jarvis:backend", {
+          detail: {online: r.ok}
+        })
+      );
+    } catch (_) {
+      document.documentElement.dataset.jarvisBackend = "offline";
+    }
+  }
+
+  /* Keyboard shortcuts */
+  document.addEventListener("keydown", e => {
+    if (e.ctrlKey && e.key.toLowerCase() === "l") {
+      e.preventDefault();
+      const input = findInput();
+      if (input) {
+        input.focus();
+        input.select();
+      }
+    }
+  });
+
+  healthCheck();
+  setInterval(healthCheck, 15000);
+
+  console.log("JARVIS MASTER 10X CONTROL CORE ONLINE");
+})();
+</script>
+
 </body>
 </html>
