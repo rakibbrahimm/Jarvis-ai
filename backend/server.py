@@ -7,10 +7,10 @@ from rakib_core.router import RAKIBRouter
 PORT = 8082
 router = RAKIBRouter()
 
-def gpt_provider(command):
+def gpt(command):
     key = os.getenv("OPENAI_API_KEY")
     if not key:
-        return "GPT provider is not configured yet."
+        return None
 
     try:
         import requests
@@ -26,41 +26,70 @@ def gpt_provider(command):
                 "input": command,
                 "max_output_tokens": 300
             },
-            timeout=30
+            timeout=25
         )
 
         if r.status_code != 200:
-            print("GPT ERROR:", r.status_code, r.text[:1000])
+            print("GPT:", r.status_code)
             return None
 
         data = r.json()
 
-        text = data.get("output_text")
-        if isinstance(text, str) and text.strip():
-            return text.strip()
+        if isinstance(data.get("output_text"), str):
+            return data["output_text"].strip()
 
         for item in data.get("output", []):
             for content in item.get("content", []):
-                value = content.get("text")
-                if isinstance(value, str) and value.strip():
-                    return value.strip()
-
-        return None
+                text = content.get("text")
+                if isinstance(text, str) and text.strip():
+                    return text.strip()
 
     except Exception as e:
-        print("GPT EXCEPTION:", e)
-        return None
+        print("GPT ERROR:", e)
 
-router.register("gpt", gpt_provider)
+    return None
+
+router.register("gpt", gpt)
+
+def local_core(command):
+    c = command.lower().strip()
+
+    greetings = {
+        "hi", "hello", "hey", "hlo",
+        "salam", "assalamualaikum"
+    }
+
+    if c in greetings:
+        return "Hello! I am RAKIB 2.0. How can I help you?"
+
+    if c in {"who are you", "what are you"}:
+        return (
+            "I am RAKIB 2.0, a personal AI assistant "
+            "with a multi-provider architecture."
+        )
+
+    if c in {"status", "system status"}:
+        return "RAKIB 2.0 Core is online."
+
+    return (
+        "RAKIB Core received your command. "
+        "Connect an available AI provider for full AI answers."
+    )
+
+router.register("rakib-core", local_core)
 
 class Handler(BaseHTTPRequestHandler):
+
     def send_json(self, data):
         raw = json.dumps(data).encode()
+
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
         self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.send_header("Content-Length", str(len(raw)))
         self.end_headers()
+
         self.wfile.write(raw)
 
     def do_OPTIONS(self):
@@ -68,7 +97,10 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         if self.path != "/ask":
-            self.send_json({"status": "error", "reply": "Unknown endpoint"})
+            self.send_json({
+                "status": "error",
+                "reply": "Unknown endpoint."
+            })
             return
 
         try:
@@ -76,7 +108,7 @@ class Handler(BaseHTTPRequestHandler):
             body = json.loads(self.rfile.read(length) or b"{}")
             command = str(body.get("command", "")).strip()
 
-            reply, provider = router.ask(command, preferred="gpt")
+            reply, provider = router.ask(command)
 
             self.send_json({
                 "status": "success",
@@ -96,5 +128,11 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, *args):
         pass
 
-print(f"RAKIB 2.0 ONLINE — http://127.0.0.1:{PORT}/ask")
+print("================================")
+print("       RAKIB 2.0 ONLINE")
+print("================================")
+print(f"http://127.0.0.1:{PORT}/ask")
+print("Providers:", ", ".join(router.providers))
+print("================================")
+
 HTTPServer(("127.0.0.1", PORT), Handler).serve_forever()
