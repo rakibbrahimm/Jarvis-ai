@@ -250,7 +250,7 @@ def local_core(command):
         "salam",
         "assalamualaikum",
     }:
-        return "Hello! I am RAKIB 2.4. How can I help you?"
+        return "Hello! I am RAKIB 3.0. How can I help you?"
 
     # Memory gets priority for direct memory questions.
     memory_answer, memory_provider = improve_answer(
@@ -511,7 +511,7 @@ class Handler(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     print("==============================================")
-    print("       RAKIB 2.4 ONLINE")
+    print("       RAKIB 3.0 ONLINE")
     print("       ALL-QUESTION ANSWER ENGINE")
     print("==============================================")
     print("http://127.0.0.1:8082/ask")
