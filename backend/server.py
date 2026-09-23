@@ -144,7 +144,7 @@ def special_command(command):
         if get_name():
             return f"Hello {get_name()}."
 
-        return "Hello. What is your name?"
+        return "Hello. I am RAKIB. How can I help?"
 
     # -----------------------------------------------------
     # USER NAME
