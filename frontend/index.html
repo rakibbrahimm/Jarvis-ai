@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RAKIB 2.0</title>
+<style>
+*{box-sizing:border-box}
+body{
+margin:0;background:#02040a;color:#00eaff;
+font-family:Arial,sans-serif;height:100vh;
+display:flex;flex-direction:column;align-items:center;
+}
+h1{margin:35px 0 8px;font-size:38px;letter-spacing:8px}
+#status{font-size:12px;opacity:.7;margin-bottom:20px}
+#chat{
+width:min(92%,700px);height:60vh;
+border:1px solid #00eaff55;border-radius:18px;
+padding:18px;overflow:auto;
+background:#050912;
+}
+.msg{margin:10px 0;padding:12px;border-radius:12px}
+.user{background:#06333a;text-align:right}
+.ai{background:#111827}
+#bar{
+width:min(92%,700px);display:flex;gap:8px;margin-top:15px
+}
+input{
+flex:1;padding:15px;border-radius:12px;
+border:1px solid #00eaff55;background:#050912;
+color:white;font-size:16px
+}
+button{
+padding:15px 20px;border:0;border-radius:12px;
+background:#00eaff;color:#001014;font-weight:bold
+}
+</style>
+</head>
+<body>
+<h1>RAKIB</h1>
+<div id="status">AI CORE INITIALIZING...</div>
+<div id="chat"></div>
+
+<div id="bar">
+<input id="input" placeholder="Ask RAKIB anything...">
+<button id="send">SEND</button>
+</div>
+
+<script>
+const input=document.getElementById("input");
+const send=document.getElementById("send");
+const chat=document.getElementById("chat");
+const status=document.getElementById("status");
+
+function add(text,cls){
+ const d=document.createElement("div");
+ d.className="msg "+cls;
+ d.textContent=text;
+ chat.appendChild(d);
+ chat.scrollTop=chat.scrollHeight;
+}
+
+async function ask(){
+ const command=input.value.trim();
+ if(!command)return;
+
+ add(command,"user");
+ input.value="";
+ status.textContent="RAKIB THINKING...";
+
+ try{
+   const r=await fetch("http://127.0.0.1:8082/ask",{
+     method:"POST",
+     headers:{"Content-Type":"application/json"},
+     body:JSON.stringify({command})
+   });
+   const data=await r.json();
+   add(data.reply || "No response received.","ai");
+   status.textContent="RAKIB 2.0 ONLINE • "+(data.provider||"core");
+ }catch(e){
+   add("Connect RAKIB backend first.","ai");
+   status.textContent="BACKEND OFFLINE";
+ }
+}
+
+send.onclick=ask;
+input.addEventListener("keydown",e=>{
+ if(e.key==="Enter")ask();
+});
+status.textContent="RAKIB 2.0 READY";
+</script>
+</body>
+</html>
