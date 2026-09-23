@@ -1,0 +1,80 @@
+<!doctype html>
+<html>
+<body style="background:#050505;color:#0f0;font-family:Arial;padding:25px">
+<h2>RAKIB I/O TEST</h2>
+
+<input id="msg" placeholder="Type Hello" style="padding:12px;width:70%">
+<button id="send">SEND</button>
+<button id="mic">🎤 MIC</button>
+
+<pre id="out" style="white-space:pre-wrap;margin-top:20px"></pre>
+
+<script>
+const API="http://127.0.0.1:8082/ask";
+const out=document.getElementById("out");
+const msg=document.getElementById("msg");
+
+function speak(text){
+  if(!("speechSynthesis" in window)){
+    out.textContent+="\nVoice not supported";
+    return;
+  }
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang="en-IN";
+  u.rate=.9;
+  speechSynthesis.speak(u);
+}
+
+async function send(){
+  const text=msg.value.trim();
+  if(!text)return;
+
+  out.textContent="RAKIB is thinking...";
+
+  try{
+    const r=await fetch(API,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({command:text})
+    });
+
+    const d=await r.json();
+    const reply=d.reply||d.response||d.message||"No reply";
+
+    out.textContent=reply;
+    speak(reply);
+  }catch(e){
+    out.textContent="ERROR: "+e.message;
+  }
+}
+
+document.getElementById("send").onclick=send;
+msg.onkeydown=e=>{if(e.key==="Enter")send()};
+
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+
+if(SR){
+  const rec=new SR();
+  rec.lang="en-IN";
+  rec.interimResults=false;
+
+  rec.onstart=()=>out.textContent="🎤 Listening...";
+  rec.onerror=e=>out.textContent="MIC ERROR: "+e.error;
+
+  rec.onresult=e=>{
+    msg.value=e.results[0][0].transcript;
+    send();
+  };
+
+  document.getElementById("mic").onclick=()=>{
+    try{rec.start()}catch(e){}
+  };
+}else{
+  document.getElementById("mic").onclick=()=>{
+    out.textContent="SpeechRecognition not supported in this browser";
+  };
+}
+</script>
+</body>
+</html>
