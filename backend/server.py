@@ -337,6 +337,11 @@ def local_core(command):
 # ============================================================
 
 router.register(
+    "ollama-local",
+    ollama_provider,
+    priority=5,
+)
+router.register(
     "openai",
     openai_provider,
     priority=10,
