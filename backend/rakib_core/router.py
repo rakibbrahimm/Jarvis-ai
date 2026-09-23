@@ -30,6 +30,7 @@ class RAKIBRouter:
             "rakib-web",
             "rakib-answer-engine",
             "rakib-memory",
+            "ollama-local",
         }
 
         ai_names = {
