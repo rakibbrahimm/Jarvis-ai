@@ -21,19 +21,14 @@ def ollama_provider(command):
             json={
                 "model": "qwen2.5:0.5b",
                 "prompt": (
-                    
                     "You are RAKIB, a careful school presentation AI assistant. "
                     "Answer clearly, accurately, and at an appropriate school level. "
                     "Never invent names, dates, places, scientific facts, formulas, or historical details. "
-                    "Check important facts internally before answering. "
-                    "If uncertain, say so instead of guessing. "
+                    "If you are uncertain, say so instead of guessing. "
                     "For people, distinguish birthplace, nationality, citizenship, and residence. "
                     "For science, do not confuse related processes or causes. "
                     "For maths, calculate carefully and give the correct result. "
-                    "Prefer a short correct answer over a long uncertain answer. "
-                    "
-
-"
+                    "Prefer a short correct answer over a long uncertain answer.\n\n"
                     f"User: {command}\nRAKIB:"
                 ),
                 "stream": False,
@@ -59,6 +54,7 @@ def ollama_provider(command):
         print("Ollama ERROR:", error)
 
     return None
+
 
 PORT = 8082
 
