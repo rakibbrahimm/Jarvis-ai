@@ -19,10 +19,6 @@ LLAMA_CLI = os.path.expanduser(
     "~/Jarvis/local-ai/llama.cpp/build/bin/llama-cli"
 )
 
-MODEL_FILE = os.path.expanduser(
-    "~/Jarvis/local-ai/models/tinyllama.gguf"
-)
-
 OPENAI_API_URL = "https://api.openai.com/v1/responses"
 
 # Cost-sensitive OpenAI model
@@ -217,7 +213,7 @@ def special_command(command):
             "JARVIS diagnostics complete. "
             "Backend online. "
             "Memory online. "
-            "TinyLlama local AI ready. "
+            "Local AI fallback disabled. "
             + (
                 "Online AI configured."
                 if online
@@ -423,157 +419,6 @@ def ask_online_ai(command, attachment=None):
         return None
 
 
-# =========================================================
-# LOCAL TINYLLAMA FALLBACK
-# =========================================================
-
-def ask_local_ai(command):
-
-    name = get_name() or "the user"
-
-    context_text = ""
-
-    for item in conversation[-4:]:
-        context_text += (
-            "\nUser: " +
-            item["user"] +
-            "\nRAKIB: " +
-            item["assistant"]
-        )
-
-    prompt = (
-        "<|system|>\n"
-        "You are RAKIB, a helpful personal AI assistant. "
-        f"The user's name is {name}. "
-        "Answer clearly and briefly."
-        "\nPrevious conversation:"
-        + context_text +
-        "\n<|user|>\n"
-        + command +
-        "\n<|assistant|>\n"
-    )
-
-    try:
-
-        result = subprocess.run(
-            [
-                LLAMA_CLI,
-                "-m",
-                MODEL_FILE,
-                "--chat-template",
-                "chatml",
-                "--single-turn",
-                "--no-display-prompt",
-                "--simple-io",
-                "--log-disable",
-                "-c",
-                "1024",
-                "-n",
-                "120",
-                "-t",
-                "2",
-                "-p",
-                prompt
-            ],
-            capture_output=True,
-            text=True,
-            timeout=180
-        )
-
-        # llama-cli normally puts generated text in stdout.
-        # stderr contains loading/performance diagnostics.
-        output = (result.stdout or "").strip()
-
-        if not output:
-            output = (result.stderr or "").strip()
-
-        # Remove prompt/template markers if present.
-        if "<|assistant|>" in output:
-            output = output.rsplit("<|assistant|>", 1)[-1]
-
-        # Remove llama-cli performance/debug output.
-        for marker in (
-            "[ Prompt:",
-            "[ Generation:",
-            "llama_perf_",
-            "llama_print_timings:"
-        ):
-            if marker in output:
-                output = output.split(marker, 1)[0]
-
-        lines = []
-
-        for line in output.splitlines():
-
-            line = line.strip()
-
-            if not line:
-                continue
-
-            if line.startswith("llama_"):
-                continue
-
-            if line.startswith("Loading model"):
-                continue
-
-            if line.startswith("build"):
-                continue
-
-            if line.startswith("model"):
-                continue
-
-            if line.startswith("ftype"):
-                continue
-
-            if line.startswith("modalities"):
-                continue
-
-            if line.startswith("available commands"):
-                continue
-
-            if line.startswith("/exit"):
-                continue
-
-            if line.startswith("/regen"):
-                continue
-
-            if line.startswith("/clear"):
-                continue
-
-            if line.startswith("/read"):
-                continue
-
-            if line.startswith("/glob"):
-                continue
-
-            if line == ">":
-                continue
-
-            lines.append(line)
-
-        reply = " ".join(lines).strip()
-
-        if not reply:
-            return "My local AI brain generated an empty response."
-
-        return reply[:1500]
-
-    except subprocess.TimeoutExpired:
-
-        return (
-            "My local AI brain took too long "
-            "to respond."
-        )
-
-    except Exception as e:
-
-        print("LOCAL AI ERROR:", e)
-
-        return (
-            "I encountered a problem while "
-            "accessing my local AI brain."
-        )
-
 
 # =========================================================
 # MASTER JARVIS CORE
@@ -660,8 +505,7 @@ def jarvis_core(command, attachment=None):
     # -----------------------------------------------------
 
     print(
-        "ONLINE AI unavailable -> "
-        "using TinyLlama fallback"
+        "ONLINE AI unavailable -> local fallback disabled"
     )
 
     local_reply = None
@@ -766,9 +610,7 @@ class JarvisHandler(BaseHTTPRequestHandler):
                     OPENAI_API_KEY
                 ),
 
-                "local_ai": os.path.exists(
-                    LLAMA_CLI
-                ),
+                "local_ai": False,
 
                 "memory": memory,
 
@@ -918,7 +760,7 @@ print(
 )
 print(
     " Local AI:",
-    "TinyLlama"
+    "Disabled"
 )
 print(
     " Model:",
