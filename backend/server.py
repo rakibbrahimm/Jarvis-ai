@@ -4,6 +4,7 @@ import os
 import subprocess
 from datetime import datetime
 import requests
+from rakib_core.router import RAKIBRouter
 
 
 # =========================================================
@@ -246,6 +247,20 @@ def build_context():
         })
 
     return messages
+
+
+# =========================================================
+# RAKIB 2.0 AI ROUTER
+# =========================================================
+
+rakib_router = RAKIBRouter()
+
+
+def rakib_gpt_provider(command):
+    return ask_online_ai(command)
+
+
+rakib_router.register("gpt", rakib_gpt_provider)
 
 
 # =========================================================
