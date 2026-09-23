@@ -5052,5 +5052,126 @@ console.log(
 })();
 </script>
 
+
+<!-- RAKIB CHAT FINAL BUTTON V2 -->
+<script>
+(function(){
+  const API='http://127.0.0.1:8081/ask';
+
+  function show(msg){
+    const a=document.getElementById('jarvisChatReply');
+    const b=document.getElementById('heard');
+    if(a){a.textContent=msg;a.innerText=msg;}
+    if(b){b.textContent=msg;b.innerText=msg;}
+  }
+
+  async function send(command){
+    command=String(command||'').trim();
+    if(!command)return;
+
+    show('RAKIB is thinking...');
+
+    try{
+      const c=new AbortController();
+      const t=setTimeout(()=>c.abort(),30000);
+
+      const r=await fetch(API,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({command}),
+        signal:c.signal
+      });
+
+      clearTimeout(t);
+
+      const raw=await r.text();
+      let d={};
+
+      try{
+        d=JSON.parse(raw);
+      }catch(e){
+        throw new Error('Invalid backend response: '+raw.slice(0,180));
+      }
+
+      if(!r.ok){
+        throw new Error(d.error||d.message||('HTTP '+r.status));
+      }
+
+      const reply=String(
+        d.reply ||
+        d.response ||
+        d.message ||
+        'Backend returned no reply.'
+      );
+
+      show(reply);
+
+      if(typeof window.rakibFinalSpeak==='function'){
+        window.rakibFinalSpeak(reply);
+      }else if(typeof window.jarvisSpeak==='function'){
+        window.jarvisSpeak(reply);
+      }
+
+    }catch(e){
+      const msg=e.name==='AbortError'
+        ? 'Backend timeout.'
+        : 'ERROR: '+e.message;
+
+      show(msg);
+      console.error('RAKIB FINAL CHAT',e);
+    }
+  }
+
+  window.rakibFinalDirectSend=send;
+
+  function bind(){
+    let btn=document.getElementById('jarvisChatSend');
+    let input=document.getElementById('jarvisChatInput');
+
+    if(!btn || !input)return;
+
+    const newBtn=btn.cloneNode(true);
+    const newInput=input.cloneNode(true);
+
+    btn.replaceWith(newBtn);
+    input.replaceWith(newInput);
+
+    newBtn.onclick=function(e){
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+
+      const command=newInput.value;
+      newInput.value='';
+
+      send(command);
+      return false;
+    };
+
+    newInput.onkeydown=function(e){
+      if(e.key==='Enter' && !e.shiftKey){
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        newBtn.click();
+        return false;
+      }
+    };
+
+    console.log('RAKIB CHAT FINAL BUTTON V2 READY');
+  }
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',bind);
+  }else{
+    bind();
+  }
+
+  setTimeout(bind,800);
+  setTimeout(bind,2000);
+
+})();
+</script>
+
 </body>
 </html>
