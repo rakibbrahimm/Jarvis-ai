@@ -380,6 +380,15 @@ class Handler(BaseHTTPRequestHandler):
             return
 
 
+        if self.path == "/diagnostics":
+            payload = diagnostics()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps(payload).encode())
+            return
+
+
         if self.path == "/health":
             self._send_json({
                 "status": "online",
