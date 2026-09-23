@@ -6,8 +6,12 @@ class RAKIBRouter:
         if callable(handler):
             self.providers[name] = handler
 
+    def available(self):
+        return list(self.providers.keys())
+
     def ask(self, command, preferred=None):
         command = (command or "").strip()
+
         if not command:
             return "I didn't receive a command.", "rakib-core"
 
@@ -19,12 +23,23 @@ class RAKIBRouter:
             if name not in order:
                 order.append(name)
 
+        errors = []
+
         for name in order:
             try:
                 result = self.providers[name](command)
+
                 if result:
                     return str(result).strip(), name
-            except Exception as e:
-                print(f"Provider {name} error:", e)
 
-        return "RAKIB could not get a response.", "rakib-core"
+                errors.append(name)
+
+            except Exception as e:
+                print(f"RAKIB PROVIDER ERROR [{name}]: {e}")
+                errors.append(name)
+
+        return (
+            "No configured AI provider is currently available. "
+            "RAKIB Core is online.",
+            "rakib-core"
+        )
