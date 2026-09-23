@@ -371,6 +371,15 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
+        if self.path == "/diagnostics":
+            payload = diagnostics()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps(payload).encode())
+            return
+
+
         if self.path == "/health":
             self._send_json({
                 "status": "online",
@@ -388,14 +397,6 @@ class Handler(BaseHTTPRequestHandler):
             "intent": detect_intent(command),
         })
 
-
-    if self.path == "/diagnostics":
-        payload = diagnostics()
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json")
-        self.end_headers()
-        self.wfile.write(json.dumps(payload).encode())
-        return
 
     def do_POST(self):
         if self.path != "/ask":
